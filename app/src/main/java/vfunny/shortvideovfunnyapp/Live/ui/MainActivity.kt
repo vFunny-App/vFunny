@@ -35,7 +35,7 @@ import java.util.*
 class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
     private val TAG: String = "MainActivity"
     var seenList: ArrayList<String> = ArrayList()
-    private lateinit var mUser: User
+    private var mUser: User? = null
     private var context: Context? = null
     private var activity: MainActivity? = null
     private var notificationVideoUrl: String? =  null
@@ -61,13 +61,14 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
             Log.e(TAG, "onCreate:  currentKey : " + User.currentKey())
             User.collection(User.currentKey()).addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(dataSnapshot: DataSnapshot) {
-                        mUser = dataSnapshot.getValue(User::class.java)!!
-                        if (mUser.seen != null) {
-                            Log.e(TAG, "seenList: ${mUser.seen}")
+                        Log.e(TAG, "onCreate:  dataSnapshot : " + dataSnapshot)
+                        mUser = dataSnapshot.getValue(User::class.java)
+                        if (mUser?.seen != null) {
+                            Log.e(TAG, "seenList: ${mUser!!.seen}")
                             val gson = Gson()
                             val type = object : TypeToken<ArrayList<String>>() {}.type
                             try {
-                                seenList = gson.fromJson(mUser.seen, type)//returning the list
+                                seenList = gson.fromJson(mUser!!.seen, type)//returning the list
                             }
                             catch (e: Exception){
                                 Log.e(TAG, "seenList: Error : $e")
@@ -168,8 +169,8 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
     }
 
     override fun onAuthSuccess(user: User?) {
-        if (User.current() != null && mUser.name == null) {
-            mUser.name = getString(R.string.name_placeholder)
+        if (User.current() != null && mUser?.name  == null) {
+            mUser!!.name = getString(R.string.name_placeholder)
             FirebaseDatabase.getInstance().getReference(Const.kUsersKey)
                 .child(User.currentKey())
                 .child("name")
