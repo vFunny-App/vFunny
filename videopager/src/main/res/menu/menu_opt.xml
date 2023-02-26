@@ -1,0 +1,23 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="vfunny.shortvideovfunnyapp.AccountActivity">
+
+    <item
+        android:id="@+id/menu2"
+        android:orderInCategory="100"
+        android:title="Rate App"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/menu3"
+        android:orderInCategory="100"
+        android:title="Share App"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/menu4"
+        android:orderInCategory="100"
+        android:title="Privacy Policy"
+        app:showAsAction="never" />
+
+</menu>

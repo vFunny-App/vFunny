@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">VFunny</string>
+    <!-- AdMob -->
+    <string name="APP_ID" translatable="false">ca-app-pub-5626712766741535~3252587671</string>
+    <string name="banner_ad_unit_id" translatable="false">ca-app-pub-5626712766741535/3841397573</string>
+    <string name="eula" translatable="false">https://termsfeed.com/eula/generator/</string>
+    <string name="privacy_policy" translatable="false">https://termsfeed.com/eula/generator/</string>
+    <string name="name_placeholder">name</string>
+
+</resources>

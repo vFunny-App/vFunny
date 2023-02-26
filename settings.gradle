@@ -1,0 +1,2 @@
+rootProject.name = "VFunny"
+include ':app', ':videopager', ':exo', ":player"
