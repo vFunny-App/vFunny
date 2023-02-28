@@ -26,6 +26,10 @@ public class User {
     public User() {
     }
 
+    public static DatabaseReference Ads() {
+        return FirebaseDatabase.getInstance().getReference(Const.kAdsKey);
+    }
+
     public static DatabaseReference collection() {
         return FirebaseDatabase.getInstance().getReference(Const.kUsersKey);
     }
