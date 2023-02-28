@@ -40,6 +40,7 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
     private var activity: MainActivity? = null
     private var notificationVideoUrl: String? =  null
     private var notificationThumbnailUrl: String? =  null
+    private var isAdsEnabled: Boolean =  false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Manual dependency injection
@@ -58,6 +59,7 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
         }
 
         if (User.currentKey() != null) {
+            getAdsStatus()
             Log.e(TAG, "onCreate:  currentKey : " + User.currentKey())
             User.collection(User.currentKey()).addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(dataSnapshot: DataSnapshot) {
@@ -102,9 +104,19 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
                                     count++                                                                                                                                                   // Increment the id for next video  // count  =  1
                                     videoCount++                                                                                                                                            // Increment the count of video(s) added
                                     videoItemList.add(VideoData(count.toString(), video, image, key = it.key))                                    // Add the video to list
-                                    if (videoCount % 5 == 0 && videoCount != 100 + seenList.size) {                                                       //check the  count if current item was  position #5 (but not the last item #100 + seenList size)
-                                        count++                                                                                                                                                   // count  = 1
-                                        videoItemList.add(VideoData(count.toString(),"","", type = "ads",  key = null))      // Increment the id for next video  // id=6 //enter  ad in list with count=6
+                                    if(isAdsEnabled) {
+                                        if (videoCount % 5 == 0 && videoCount != 100 + seenList.size) {                                                       //check the  count if current item was  position #5 (but not the last item #100 + seenList size)
+                                            count++                                                                                                                                                   // count  = 1
+                                            videoItemList.add(
+                                                VideoData(
+                                                    count.toString(),
+                                                    "",
+                                                    "",
+                                                    type = "ads",
+                                                    key = null
+                                                )
+                                            )      // Increment the id for next video  // id=6 //enter  ad in list with count=6
+                                        }
                                     }
                                 }
                                 val module = MainModule(activity!!, videoItemList)
@@ -157,6 +169,21 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
 
         })
         binding.animationView.playAnimation()
+    }
+
+    private fun getAdsStatus() {
+        val adsEnabled = User.Ads()
+        adsEnabled.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                isAdsEnabled = dataSnapshot.getValue(Boolean::class.java) == true
+                // do something with isEnabled
+                // you can use the isEnabled value here in your loop
+            }
+            override fun onCancelled(databaseError: DatabaseError) {
+                Log.e(TAG, "onCancelled: $databaseError")
+                // handle error
+            }
+        })
     }
 
     private fun showBannerAds(binding: MainActivityBinding) {

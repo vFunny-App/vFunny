@@ -12,6 +12,7 @@ public final class Const {
      * Must be a non-empty string and not contain '.' '#' '$' '[' or ']'
      */
 
+    public static final String kAdsKey = "isAdsEnabled";
     public static final String kUserFeedKey = "user_feed";
     public static final String kUsersKey = "users";
     public static final String kFollowersKey = "followers";
