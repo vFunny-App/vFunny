@@ -1,8 +1,11 @@
 package vfunny.shortvideovfunnyapp.Live.ui
 
 import android.animation.Animator
+import android.app.PendingIntent
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -23,6 +26,7 @@ import com.google.gson.Gson
 import com.onesignal.OneSignal
 import com.player.models.VideoData
 import com.videopager.ui.VideoPagerFragment
+import vfunny.shortvideovfunnyapp.BuildConfig.APPLICATION_ID
 import vfunny.shortvideovfunnyapp.Live.di.MainModule
 import vfunny.shortvideovfunnyapp.Login.Loginutils.AuthManager
 import vfunny.shortvideovfunnyapp.Login.data.Const
@@ -52,10 +56,22 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
         OneSignal.setNotificationOpenedHandler { result ->
             val data = result.notification.additionalData
             Log.e(TAG, "NOTIFICATION additionalData :  ${result.notification.additionalData }")
-            Log.e(TAG, "NOTIFICATION video_url :  ${data.getString("video_url")}")
-            Log.e(TAG, "NOTIFICATION thumbnail_url :  ${data.getString("thumbnail_url")}")
-            notificationVideoUrl = data.getString("video_url").toString()
-            notificationThumbnailUrl = data.getString("thumbnail_url").toString()
+            if(data.has("video_url") && data.has("thumbnail_url")){
+                notificationVideoUrl = data.getString("video_url").toString()
+                notificationThumbnailUrl = data.getString("thumbnail_url").toString()
+            } else if (data.has("app_update_notification")) {
+                val appPackageName = APPLICATION_ID
+                try {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$appPackageName"))
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    startActivity(intent)
+                } catch (e: ActivityNotFoundException) {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$appPackageName"))
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    startActivity(intent)
+                }
+
+            }
         }
 
         if (User.currentKey() != null) {
