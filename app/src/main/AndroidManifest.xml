@@ -31,7 +31,7 @@
 
         <!-- name doesn't change, value = your class fully name spaced-->
         <meta-data android:name="com.onesignal.NotificationServiceExtension"
-            android:value="vfunny.shortvideovfunnyapp.Notficiation.NotificationServiceExtension" />
+            android:value="vfunny.shortvideovfunnyapp.Notification.NotificationServiceExtension" />
 
     </application>
 
