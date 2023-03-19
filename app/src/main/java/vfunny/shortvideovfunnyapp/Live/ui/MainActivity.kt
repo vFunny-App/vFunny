@@ -77,17 +77,6 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
                     override fun onDataChange(dataSnapshot: DataSnapshot) {
                         Log.e(TAG, "onCreate:  dataSnapshot : " + dataSnapshot)
                         mUser = dataSnapshot.getValue(User::class.java)
-                        if (mUser?.seen != null) {
-                            Log.e(TAG, "seenList: ${mUser!!.seen}")
-                            val gson = Gson()
-                            val type = object : TypeToken<ArrayList<String>>() {}.type
-                            try {
-                                seenList = gson.fromJson(mUser!!.seen, type)//returning the list
-                            }
-                            catch (e: Exception){
-                                Log.e(TAG, "seenList: Error : $e")
-                            }
-                        }
                         val videoItemList = ArrayList<VideoData>()
                         val firebaseDatabase = FirebaseDatabase.getInstance()
                         val databaseReference = firebaseDatabase.getReference("posts").limitToLast(100)

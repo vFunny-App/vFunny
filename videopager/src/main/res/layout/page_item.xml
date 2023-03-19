@@ -80,4 +80,16 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/share" />
 
+    <ImageView
+        android:id="@+id/delete_item"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
+        android:background="@drawable/btn_bg"
+        android:padding="5dp"
+        android:layout_marginTop="5dp"
+        android:src="@android:drawable/ic_menu_delete"
+        android:layout_marginEnd="5dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/more_options" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

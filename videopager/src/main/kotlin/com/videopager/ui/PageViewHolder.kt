@@ -1,5 +1,6 @@
 package com.videopager.ui
 
+import android.app.ProgressDialog
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -7,6 +8,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.*
+import androidx.appcompat.app.AlertDialog
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
@@ -24,6 +26,8 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
 import com.google.gson.Gson
 import com.player.models.VideoData
 import com.player.ui.AppPlayerView
@@ -37,7 +41,7 @@ import com.videopager.ui.extensions.findParentById
 import java.util.*
 
 var seenList = mutableListOf<String>()
-var hasPreviousFetched : Boolean = false
+var hasPreviousFetched: Boolean = false
 
 internal class PageViewHolder(
     private val binding: PageItemBinding,
@@ -78,14 +82,76 @@ internal class PageViewHolder(
         context.startActivity(Intent.createChooser(i, "Share URL"))
     }
 
+    private fun deleteItem(videoData: VideoData) {
+        val context = itemView.context
+        val builder = AlertDialog.Builder(context)
+        val storage = FirebaseStorage.getInstance()
+        val storageReference = FirebaseStorage.getInstance().reference
+        val userId = FirebaseAuth.getInstance().currentUser!!.uid
+        val thumbnailRef = storage.getReferenceFromUrl(videoData.previewImageUri)
+        val videoRef = storage.getReferenceFromUrl(videoData.mediaUri)
+        val dbReference = FirebaseDatabase.getInstance().getReference("posts").child(videoData.key!!)
+        Log.e(TAG, "deleteItem: ${videoData.previewImageUri}",)
+        Log.e(TAG, "deleteItem: ${videoData.mediaUri}",)
+        Log.e(TAG, "thumbnailRef: $thumbnailRef",)
+        Log.e(TAG, "videoRef: $videoRef",)
+        builder.setCancelable(false)
+        builder.setMessage("Do you want to delete this item?")
+            .setPositiveButton("Yes") { dialog, id ->
+                // User clicked Yes button
+                val progressDialog = ProgressDialog(context)
+                progressDialog.setTitle("Deleting...")
+                progressDialog.show()
+// Create a StorageReference object for the file you want to delete
+                val thumbnailSegments = thumbnailRef.toString().split("/")
+                val videoSegments = videoRef.toString().split("/")
+                if (thumbnailSegments.size == 2) {
+                    val thumbnailFolderName = thumbnailSegments[0]
+                    val thumbnailFileName = thumbnailSegments[1]
+                    storageReference.child(thumbnailFolderName).child(thumbnailFileName).delete().addOnFailureListener { e: java.lang.Exception ->
+                            if (progressDialog.isShowing) {
+                                progressDialog.dismiss()
+                            }
+                            Toast.makeText(context, "Failed " + e.message, Toast.LENGTH_SHORT).show()
+                            Log.e("TAG", "Failed : " + e.message)
+                        }
+                }
+                if (videoSegments.size == 2) {
+                    val videoFolderName = videoSegments[0]
+                    val videoFileName = videoSegments[1]
+                    storageReference.child(videoFolderName).child(videoFileName).delete().addOnFailureListener { e: java.lang.Exception ->
+                            if (progressDialog.isShowing) {
+                                progressDialog.dismiss()
+                            }
+                            Toast.makeText(context, "Failed " + e.message, Toast.LENGTH_SHORT).show()
+                            Log.e("TAG", "Failed : " + e.message)
+                        }
+                }
+                dbReference.removeValue()
+                Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show()
+                if (progressDialog.isShowing) {
+                    progressDialog.dismiss()
+                }
+            }
+            .setNegativeButton("No") { dialog, id ->
+                // User cancelled the dialog
+                Toast.makeText(context, "Cancelled", Toast.LENGTH_SHORT).show()
+            }
+        builder.create().show()
+    }
+
     private fun moreOptionClick(url: String, view: View) {
         val popup = PopupMenu(itemView.context, view)
         popup.inflate(R.menu.menu_opt)
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.menu2 ->
-                    itemView.context.startActivity(Intent(Intent.ACTION_VIEW,
-                        Uri.parse("market://details?id=${itemView.context.packageName}")))
+                    itemView.context.startActivity(
+                        Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse("market://details?id=${itemView.context.packageName}")
+                        )
+                    )
                 R.id.menu3 -> try {
                     val i = Intent(Intent.ACTION_SEND)
                     i.type = "text/plain"
@@ -99,8 +165,12 @@ internal class PageViewHolder(
                 } catch (e: java.lang.Exception) {
 //                    TODO IDK Handle This?
                 }
-                R.id.menu4 -> itemView.context.startActivity(Intent(Intent.ACTION_VIEW,
-                    Uri.parse("https://sites.google.com/view/vfunny/home")))
+                R.id.menu4 -> itemView.context.startActivity(
+                    Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse("https://sites.google.com/view/vfunny/home")
+                    )
+                )
             }
             false
         }
@@ -120,8 +190,13 @@ internal class PageViewHolder(
             binding.waShare.setOnClickListener { shareWaClick(videoData.mediaUri) }
             binding.share.setOnClickListener { shareClick(videoData.mediaUri) }
             binding.moreOptions.setOnClickListener {
-                moreOptionClick(videoData.mediaUri,
-                    binding.moreOptions)
+                moreOptionClick(
+                    videoData.mediaUri,
+                    binding.moreOptions
+                )
+            }
+            binding.deleteItem.setOnClickListener {
+                deleteItem(videoData)
             }
             ConstraintSet().apply {
                 clone(binding.root)
@@ -134,8 +209,8 @@ internal class PageViewHolder(
             currentNativeAd?.destroy()
 
             /**
-              If First Item in videos  list, get previous seen List from Firebase and then add  this video KEY
-              else add KEY to list
+            If First Item in videos  list, get previous seen List from Firebase and then add  this video KEY
+            else add KEY to list
              */
 
             Log.e(TAG, "video ID : : ${videoData.id}")
@@ -153,30 +228,35 @@ internal class PageViewHolder(
                                 val mUser = dataSnapshot.getValue(User::class.java)!!
                                 if (mUser.seen != null) {
                                     Log.e(TAG, "Previous seenList: ${mUser.seen}")
-                                    try{
+                                    try {
                                         val gson = Gson()
                                         val type = object : TypeToken<ArrayList<String>>() {}.type
-                                        seenList.addAll(gson.fromJson(mUser.seen,
-                                            type)) //returning the list
+                                        seenList.addAll(
+                                            gson.fromJson(
+                                                mUser.seen,
+                                                type
+                                            )
+                                        ) //returning the list
                                         Log.e(TAG, "Previous + new seenList: $seenList ")
-                                    }
-                                    catch (e: Exception) {
+                                    } catch (e: Exception) {
                                         Log.e(TAG, "Previous + new seenList:  Exception : $e ")
                                     }
                                     setSeen(videoData)
                                     hasPreviousFetched = true
                                 }
                             }
+
                             override fun onCancelled(databaseError: DatabaseError) {
-                                Toast.makeText(itemView.context,
+                                Toast.makeText(
+                                    itemView.context,
                                     "Error Fetching Data! Check Network Connection!",
-                                    Toast.LENGTH_SHORT).show()
+                                    Toast.LENGTH_SHORT
+                                ).show()
                                 hasPreviousFetched = true
                             }
                         })
                 }
-            }
-            else {
+            } else {
                 Log.e(TAG, ": Updating Seen List")
                 setSeen(videoData)
             }
@@ -230,9 +310,11 @@ internal class PageViewHolder(
             override fun onAdFailedToLoad(loadAdError: LoadAdError) {
                 val error =
                     "domain: ${loadAdError.domain}, code: ${loadAdError.code}, message: ${loadAdError.message}"
-                Snackbar.make(adContainer,
+                Snackbar.make(
+                    adContainer,
                     "Failed to load native ad with error $error",
-                    Snackbar.LENGTH_SHORT).show()
+                    Snackbar.LENGTH_SHORT
+                ).show()
                 Log.e("ADS", "onAdFailedToLoad: $error")
             }
         }).build()
@@ -312,10 +394,14 @@ internal class PageViewHolder(
         // Updates the UI to say whether or not this ad has a video asset.
         if (vc != null) {
             if (vc.hasVideoContent()) {
-                Log.e("TAG",
-                    String.format(Locale.getDefault(),
+                Log.e(
+                    "TAG",
+                    String.format(
+                        Locale.getDefault(),
                         "Video status: Ad contains a %.2f:1 video asset.",
-                        nativeAd.mediaContent?.aspectRatio))
+                        nativeAd.mediaContent?.aspectRatio
+                    )
+                )
                 // Create a new VideoLifecycleCallbacks object and pass it to the VideoController. The
                 // VideoController will call methods on this object when events occur in the video
                 // lifecycle.
