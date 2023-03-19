@@ -4,13 +4,14 @@ import android.animation.Animator
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SwitchCompat
 import androidx.fragment.app.commit
 import androidx.fragment.app.replace
 import com.google.common.reflect.TypeToken
@@ -31,7 +32,6 @@ import vfunny.shortvideovfunnyapp.Login.data.Const
 import vfunny.shortvideovfunnyapp.Login.data.User
 import vfunny.shortvideovfunnyapp.R
 import vfunny.shortvideovfunnyapp.databinding.MainActivityBinding
-import java.util.*
 
 class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
     private val TAG: String = "MainActivity"
@@ -70,9 +70,8 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
 
             }
         }
-
         if (User.currentKey() != null) {
-            getAdsStatus()
+            getAdsStatus(binding.adsSwitch)
             Log.e(TAG, "onCreate:  currentKey : " + User.currentKey())
             User.collection(User.currentKey()).addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(dataSnapshot: DataSnapshot) {
@@ -183,8 +182,46 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
         })
         binding.animationView.playAnimation()
         binding.addBtn.setOnClickListener { addClick() }
+        binding.updateNotification.setOnClickListener() {
+                showUpdateNotificationConfirmationDialog()
+        }
     }
 
+    private fun showUpdateNotificationConfirmationDialog() {
+        val builder = AlertDialog.Builder(this)
+        builder.setMessage("Send Update notification to users?")
+            .setPositiveButton("Yes") { dialog, id ->
+                // TODO send notification to old users
+                // User cancelled the dialog
+                dialog.dismiss()
+            }
+            .setNegativeButton("No") { dialog, id ->
+                // User cancelled the dialog
+                dialog.dismiss()
+            }
+        builder.create().show()
+    }
+
+    private fun showConfirmationDialog(message: String, value: Boolean, adsSwitch: SwitchCompat) {
+        val builder = AlertDialog.Builder(this)
+        builder.setCancelable(false)
+        builder.setMessage(message)
+            .setPositiveButton("Yes") { dialog, id ->
+                // User clicked Yes button
+                FirebaseDatabase.getInstance().getReference(Const.kAdsKey).setValue(value).addOnSuccessListener {
+                    isAdsEnabled = value
+                }.addOnFailureListener {
+                    adsSwitch.isChecked = !value
+                    Toast.makeText(activity, "Something went wrong while changing ads Status", Toast.LENGTH_LONG).show()
+                    Log.e(TAG, "showConfirmationDialog: Error : ", it)
+                }
+            }
+            .setNegativeButton("No") { dialog, id ->
+                // User cancelled the dialog
+                adsSwitch.isChecked = !value
+            }
+        builder.create().show()
+    }
 
     private fun addClick() {
         Log.e(TAG, "addClick: clicked")
@@ -196,12 +233,19 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
         }
     }
 
-
-    private fun getAdsStatus() {
+    private fun getAdsStatus(adsSwitch: SwitchCompat) {
         val adsEnabled = User.Ads()
         adsEnabled.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 isAdsEnabled = dataSnapshot.getValue(Boolean::class.java) == true
+                adsSwitch.isChecked = isAdsEnabled
+                adsSwitch.setOnCheckedChangeListener { _, isChecked ->
+                    if (isChecked) {
+                        showConfirmationDialog("Enable Ads?", true, adsSwitch)
+                    } else {
+                        showConfirmationDialog("Disable Ads?", false,  adsSwitch)
+                    }
+                }
                 // do something with isEnabled
                 // you can use the isEnabled value here in your loop
             }
