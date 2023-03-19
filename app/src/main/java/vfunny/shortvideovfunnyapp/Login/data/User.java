@@ -10,11 +10,6 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
-/**
- * Created on 02/05/2017.
- * Copyright by 01eg.me
- */
-
 public class User {
 
     private String id;

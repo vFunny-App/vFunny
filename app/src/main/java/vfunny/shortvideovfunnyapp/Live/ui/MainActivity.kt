@@ -1,10 +1,10 @@
 package vfunny.shortvideovfunnyapp.Live.ui
 
 import android.animation.Animator
-import android.app.PendingIntent
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -13,15 +13,13 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.commit
 import androidx.fragment.app.replace
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.MobileAds
-import com.google.android.gms.ads.RequestConfiguration
 import com.google.common.reflect.TypeToken
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.storage.FirebaseStorage
 import com.google.gson.Gson
 import com.onesignal.OneSignal
 import com.player.models.VideoData
@@ -33,7 +31,6 @@ import vfunny.shortvideovfunnyapp.Login.data.Const
 import vfunny.shortvideovfunnyapp.Login.data.User
 import vfunny.shortvideovfunnyapp.R
 import vfunny.shortvideovfunnyapp.databinding.MainActivityBinding
-import java.lang.Exception
 import java.util.*
 
 class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
@@ -185,7 +182,20 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
 
         })
         binding.animationView.playAnimation()
+        binding.addBtn.setOnClickListener { addClick() }
     }
+
+
+    private fun addClick() {
+        Log.e(TAG, "addClick: clicked")
+        if(MediaUtils.storagePermissionGrant(activity)) {
+            Log.e(TAG, "addClick: true")
+            MediaUtils.openVideoLibrary(activity, MediaUtils.REQUEST_VIDEO_PICK)
+        } else {
+            Log.e(TAG, "addClick: false")
+        }
+    }
+
 
     private fun getAdsStatus() {
         val adsEnabled = User.Ads()
@@ -236,6 +246,38 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
             } else {
                 // error
                 finish() // close the app
+            }
+        }
+        else if (requestCode == MediaUtils.REQUEST_VIDEO_PICK) {
+            super.onActivityResult(requestCode, resultCode, data)
+            val storage = FirebaseStorage.getInstance()
+            val storageReference = storage.reference
+            if (data != null) {
+                val filePath = data.data
+                if (resultCode == RESULT_OK) {
+                    MediaUtils.uploadPhoto(
+                        storageReference,
+                        filePath,
+                        this,
+                        MediaUtils.REQUEST_VIDEO_PICK
+                    )
+                }
+            }
+        }
+        else if (requestCode == MediaUtils.REQUEST_VIDEO_CAPTURE) {
+            super.onActivityResult(requestCode, resultCode, data)
+            val storage = FirebaseStorage.getInstance()
+            val storageReference = storage.reference
+            if (data != null) {
+                val filePath = data.data
+                if (resultCode == RESULT_OK) {
+                    MediaUtils.uploadPhoto(
+                        storageReference,
+                        filePath,
+                        this,
+                        MediaUtils.REQUEST_VIDEO_CAPTURE
+                    )
+                }
             }
         }
     }

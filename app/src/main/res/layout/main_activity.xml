@@ -35,6 +35,12 @@
 
     </LinearLayout>
 
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/addBtn"
+        android:src="@android:drawable/ic_input_add"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:contentDescription="add" />
 <!--    &lt;!&ndash; view for AdMob Banner Ad &ndash;&gt;-->
 <!--    <com.google.android.gms.ads.AdView-->
 <!--        android:id="@+id/adView"-->
