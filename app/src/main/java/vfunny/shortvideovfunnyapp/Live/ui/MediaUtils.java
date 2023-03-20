@@ -171,7 +171,7 @@ public class MediaUtils {
             final String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
             Log.e("TAG", "uploadPhoto: userId : " + userId);
             Log.e("TAG", "uploadPhoto: filePath : " + filePath);
-            StorageReference ref = storageReference.child(userId);
+            StorageReference ref = storageReference.child(userId + "/av" + System.currentTimeMillis());
             ref.putFile(filePath)
                     .addOnSuccessListener(taskSnapshot -> {
                         if (progressDialog.isShowing()) {

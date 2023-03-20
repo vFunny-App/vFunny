@@ -1,5 +1,7 @@
 package vfunny.shortvideovfunnyapp.Login.data;
 
+import android.util.Log;
+
 import com.firebase.ui.database.SnapshotParser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.Exclude;
@@ -57,6 +59,9 @@ public class Story {
         newStory.setUser(User.current().getKey());
         newStory.setImage(thumbnail);
         newStory.setVideo(video);
+        Log.e("TAG", "UPLOADING TO DB");
+        Log.e("TAG", "thumbnail: " + thumbnail );
+        Log.e("TAG", "video: " + video );
         Story.uploadStory(newStory);
     }
 
