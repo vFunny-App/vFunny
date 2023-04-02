@@ -101,5 +101,6 @@ class VideoPreLoadingService :
     override fun onDestroy() {
         super.onDestroy()
         cachingJob?.cancel()
+        stopSelf()
     }
 }

@@ -14,8 +14,8 @@ android {
         applicationId 'vfunny.shortvideovfunnyapp'
         minSdkVersion 21
         targetSdkVersion 33
-        versionCode 6
-        versionName "6.0.0"
+        versionCode 14
+        versionName "6.0.8"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -71,4 +71,5 @@ dependencies {
     implementation "com.firebaseui:firebase-ui:6.0.2"
     // OneSignal dependency
     implementation 'com.onesignal:OneSignal:4.8.2'
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.7'
 }

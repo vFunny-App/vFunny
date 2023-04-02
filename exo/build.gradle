@@ -40,6 +40,7 @@ dependencies {
     implementation 'io.github.java-diff-utils:java-diff-utils:4.12'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.7'
 
     // OneSignal dependency
     implementation 'com.onesignal:OneSignal:4.8.2'
