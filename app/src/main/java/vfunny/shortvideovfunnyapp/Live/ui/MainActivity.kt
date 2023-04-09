@@ -1,7 +1,6 @@
 package vfunny.shortvideovfunnyapp.Live.ui
 
 import android.animation.Animator
-import android.app.PendingIntent
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -13,9 +12,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.commit
 import androidx.fragment.app.replace
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.MobileAds
-import com.google.android.gms.ads.RequestConfiguration
+import androidx.lifecycle.lifecycleScope
 import com.google.common.reflect.TypeToken
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.DataSnapshot
@@ -26,6 +23,7 @@ import com.google.gson.Gson
 import com.onesignal.OneSignal
 import com.player.models.VideoData
 import com.videopager.ui.VideoPagerFragment
+import kotlinx.coroutines.Dispatchers
 import vfunny.shortvideovfunnyapp.BuildConfig.APPLICATION_ID
 import vfunny.shortvideovfunnyapp.Live.di.MainModule
 import vfunny.shortvideovfunnyapp.Login.Loginutils.AuthManager
@@ -35,16 +33,27 @@ import vfunny.shortvideovfunnyapp.R
 import vfunny.shortvideovfunnyapp.databinding.MainActivityBinding
 import java.lang.Exception
 import java.util.*
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.tasks.await
 
 class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
     private val TAG: String = "MainActivity"
-    var seenList: ArrayList<String> = ArrayList()
+    private var seenList = arrayListOf<String>()
     private var mUser: User? = null
     private var context: Context? = null
     private var activity: MainActivity? = null
-    private var notificationVideoUrl: String? =  null
-    private var notificationThumbnailUrl: String? =  null
-    private var isAdsEnabled: Boolean =  false
+    private var notificationVideoUrl: String? = null
+    private var notificationThumbnailUrl: String? = null
+    private var isAdsEnabled: Boolean = false
+
+    companion object {
+        private val postsDbRef =
+            FirebaseDatabase.getInstance().getReference("posts").limitToLast(100)
+        const val ADS_TYPE = "ads"
+        const val ITEM_COUNT_THRESHOLD = 5
+        const val ADS_FREQUENCY = 5
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Manual dependency injection
@@ -55,113 +64,119 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
         FirebaseApp.initializeApp(this.applicationContext)
         OneSignal.setNotificationOpenedHandler { result ->
             val data = result.notification.additionalData
-            Log.e(TAG, "NOTIFICATION additionalData :  ${result.notification.additionalData }")
-            if(data.has("video_url") && data.has("thumbnail_url")){
+            Log.e(TAG, "NOTIFICATION additionalData :  ${result.notification.additionalData}")
+            if (data.has("video_url") && data.has("thumbnail_url")) {
                 notificationVideoUrl = data.getString("video_url").toString()
                 notificationThumbnailUrl = data.getString("thumbnail_url").toString()
             } else if (data.has("app_update_notification")) {
                 val appPackageName = APPLICATION_ID
                 try {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$appPackageName"))
+                    val intent =
+                        Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$appPackageName"))
                     intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
                     startActivity(intent)
                 } catch (e: ActivityNotFoundException) {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$appPackageName"))
+                    val intent = Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse("https://play.google.com/store/apps/details?id=$appPackageName")
+                    )
                     intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
                     startActivity(intent)
                 }
 
             }
         }
-
-        if (User.currentKey() != null) {
-            getAdsStatus()
-            Log.e(TAG, "onCreate:  currentKey : " + User.currentKey())
-            User.collection(User.currentKey()).addListenerForSingleValueEvent(object : ValueEventListener {
+        User.currentKey()?.let { currentKey ->
+            User.collection(currentKey).run {
+                addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(dataSnapshot: DataSnapshot) {
-                        Log.e(TAG, "onCreate:  dataSnapshot : " + dataSnapshot)
-                        mUser = dataSnapshot.getValue(User::class.java)
-                        if (mUser?.seen != null) {
-                            Log.e(TAG, "seenList: ${mUser!!.seen}")
+                        val mUser = dataSnapshot.getValue(User::class.java)
+                        mUser?.seen?.let { seen ->
+                            Log.e(TAG, "seenList: $seen")
                             val gson = Gson()
-                            val type = object : TypeToken<ArrayList<String>>() {}.type
+                            val listType = object : TypeToken<ArrayList<String>>() {}.type
                             try {
-                                seenList = gson.fromJson(mUser!!.seen, type)//returning the list
-                            }
-                            catch (e: Exception){
-                                Log.e(TAG, "seenList: Error : $e")
-                            }
-                        }
-                        val videoItemList = ArrayList<VideoData>()
-                        val firebaseDatabase = FirebaseDatabase.getInstance()
-                        val databaseReference = firebaseDatabase.getReference("posts").limitToLast(100)
-                        databaseReference.addListenerForSingleValueEvent(object :
-                            ValueEventListener {
-                            var count = 0
-                            var videoCount = 0
-                            override fun onDataChange(snapshot: DataSnapshot) {
-                                if(notificationVideoUrl!=null ){
-                                    count ++
-                                    videoItemList.add(VideoData(count.toString(), notificationVideoUrl.toString(), notificationThumbnailUrl.toString(), key = ""))
-                                }
-                                snapshot.children.reversed().forEach {
-                                    val video: String = it.child("video").value.toString()
-                                    val image: String = it.child("image").value.toString()
-                                    var i = 0
-                                    if (seenList.isNotEmpty()) {
-                                        while (i < seenList.size) {
-                                            if (it.key == seenList[i])
-                                                return@forEach
-                                            i++
-                                        }
-                                    } else {
-                                        Log.e(TAG, "Empty seenList")
+                                seenList = gson.fromJson(seen, listType)
+                                val videoItemList = ArrayList<VideoData>()
+
+                                lifecycleScope.launch {
+                                    val snapshot = withContext(Dispatchers.IO) {
+                                        postsDbRef.get().await()
                                     }
-                                    count++                                                                                                                                                   // Increment the id for next video  // count  =  1
-                                    videoCount++                                                                                                                                            // Increment the count of video(s) added
-                                    videoItemList.add(VideoData(count.toString(), video, image, key = it.key))                                    // Add the video to list
-                                    if(isAdsEnabled) {
-                                        if (videoCount % 5 == 0 && videoCount != 100 + seenList.size) {                                                       //check the  count if current item was  position #5 (but not the last item #100 + seenList size)
-                                            count++                                                                                                                                                   // count  = 1
+
+                                    var count = 0
+                                    var videoCount = 0
+
+                                    if (notificationVideoUrl != null) {
+                                        count++
+                                        videoItemList.add(
+                                            VideoData(
+                                                count.toString(),
+                                                notificationVideoUrl.toString(),
+                                                notificationThumbnailUrl.toString(),
+                                                key = ""
+                                            )
+                                        )
+                                    }
+
+                                    snapshot.children.reversed().forEach {
+                                        val video: String = it.child("video").value.toString()
+                                        val image: String = it.child("image").value.toString()
+                                        for (key in seenList) {
+                                            if (it.key == key) {
+                                                return@forEach
+                                            }
+                                        }
+                                        count++
+                                        videoCount++
+                                        videoItemList.add(
+                                            VideoData(
+                                                count.toString(),
+                                                video,
+                                                image,
+                                                key = it.key
+                                            )
+                                        )
+                                        val totalItemCount = ITEM_COUNT_THRESHOLD + seenList.size
+                                        if (isAdsEnabled && videoCount % ADS_FREQUENCY == 0 && videoCount != totalItemCount) {
+                                            count++
                                             videoItemList.add(
                                                 VideoData(
                                                     count.toString(),
                                                     "",
                                                     "",
-                                                    type = "ads",
+                                                    type = ADS_TYPE,
                                                     key = null
                                                 )
-                                            )      // Increment the id for next video  // id=6 //enter  ad in list with count=6
+                                            )
+                                        }
+                                    }
+
+                                    val module = MainModule(activity!!, videoItemList)
+                                    supportFragmentManager.fragmentFactory = module.fragmentFactory
+                                    if (savedInstanceState == null) {
+                                        supportFragmentManager.commit {
+                                            replace<VideoPagerFragment>(binding.fragmentContainer.id)
                                         }
                                     }
                                 }
-                                val module = MainModule(activity!!, videoItemList)
-                                supportFragmentManager.fragmentFactory = module.fragmentFactory
-                                if (savedInstanceState == null) {
-                                    supportFragmentManager.commit {
-                                        replace<VideoPagerFragment>(binding.fragmentContainer.id)
-                                    }
-                                }
+                            } catch (e: Exception) {
+                                Log.e(TAG, "seenList: Error : $e")
                             }
-
-                            override fun onCancelled(error: DatabaseError) {
-                                Toast.makeText(context,
-                                    "Error Fetching Data! Check Network Connection!",
-                                    Toast.LENGTH_SHORT).show()
-                            }
-                        })
+                        }
                     }
 
                     override fun onCancelled(databaseError: DatabaseError) {
-                        Toast.makeText(context,
+                        Toast.makeText(
+                            context,
                             "Error Fetching Data! Check Network Connection!",
-                            Toast.LENGTH_SHORT).show()
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 })
-        }
-        else {
-            AuthManager.getInstance().showLogin(this)
-        }
+            }
+        } ?: AuthManager.getInstance().showLogin(this) // Show login screen if user key is null
+
         setContentView(binding.root)
 //        showBannerAds(binding)
         binding.animationView.addAnimatorListener(object : Animator.AnimatorListener {
@@ -195,6 +210,7 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
                 // do something with isEnabled
                 // you can use the isEnabled value here in your loop
             }
+
             override fun onCancelled(databaseError: DatabaseError) {
                 Log.e(TAG, "onCancelled: $databaseError")
                 // handle error
@@ -212,7 +228,7 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
     }
 
     override fun onAuthSuccess(user: User?) {
-        if (User.current() != null && mUser?.name  == null) {
+        if (User.current() != null && mUser?.name == null) {
             mUser!!.name = getString(R.string.name_placeholder)
             FirebaseDatabase.getInstance().getReference(Const.kUsersKey)
                 .child(User.currentKey())
