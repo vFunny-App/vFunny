@@ -70,8 +70,6 @@ public class NotificationServiceExtension implements OSRemoteNotificationReceive
                 Spannable spannableBody = new SpannableString(notification.getBody());
                 spannableBody.setSpan(new ForegroundColorSpan(Color.BLUE), 0, notification.getBody().length(), 0);
                 builder.setContentText(spannableBody);
-                //Force remove push from Notification Center after 30 seconds
-                builder.setTimeoutAfter(30000);
                 return builder;
             });
 

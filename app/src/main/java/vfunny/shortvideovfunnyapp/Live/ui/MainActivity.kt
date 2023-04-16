@@ -97,8 +97,10 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
                             val listType = object : TypeToken<ArrayList<String>>() {}.type
                             try {
                                 seenList = gson.fromJson(seen, listType)
-                                val videoItemList = ArrayList<VideoData>()
-
+                            } catch (e: Exception) {
+                                Log.e(TAG, "seenList: Error : $e")
+                            }
+                            val videoItemList = ArrayList<VideoData>()
                                 lifecycleScope.launch {
                                     val snapshot = withContext(Dispatchers.IO) {
                                         postsDbRef.get().await()
@@ -160,9 +162,6 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
                                         }
                                     }
                                 }
-                            } catch (e: Exception) {
-                                Log.e(TAG, "seenList: Error : $e")
-                            }
                         }
                     }
 
