@@ -9,6 +9,8 @@ import android.view.View
 import android.widget.*
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.isVisible
+import androidx.lifecycle.findViewTreeLifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import coil.ImageLoader
 import coil.load
@@ -20,10 +22,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.common.reflect.TypeToken
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.*
 import com.google.gson.Gson
 import com.player.models.VideoData
 import com.player.ui.AppPlayerView
@@ -34,19 +33,18 @@ import com.videopager.models.PageEffect
 import com.videopager.models.ResetAnimationsEffect
 import com.videopager.models.User
 import com.videopager.ui.extensions.findParentById
+import kotlinx.coroutines.launch
 import java.util.*
 
-var seenList = mutableListOf<String>()
-var hasPreviousFetched : Boolean = false
 
 internal class PageViewHolder(
     private val binding: PageItemBinding,
     private val imageLoader: ImageLoader,
     private val click: () -> Unit,
 ) : RecyclerView.ViewHolder(binding.root) {
+    private lateinit var videoData: VideoData
     private val TAG: String = "PageViewHolder"
     private val animationEffect = FadeInThenOutAnimationEffect(binding.playPause)
-
     init {
         binding.root.setOnClickListener { click() }
     }
@@ -108,6 +106,7 @@ internal class PageViewHolder(
     }
 
     fun bind(videoData: VideoData) {
+        this.videoData = videoData
         if (videoData.type?.equals("video") == true) {
             binding.previewImage.visibility = View.VISIBLE
             binding.waShare.visibility = View.VISIBLE
@@ -130,57 +129,7 @@ internal class PageViewHolder(
                 setDimensionRatio(binding.previewImage.id, ratio)
                 applyTo(binding.root)
             }
-
             currentNativeAd?.destroy()
-
-            /**
-              If First Item in videos  list, get previous seen List from Firebase and then add  this video KEY
-              else add KEY to list
-             */
-
-            Log.e(TAG, "video ID : : ${videoData.id}")
-            if (videoData.id == "1") {
-                Log.e(TAG, ": Getting Previous Seen List")
-                FirebaseApp.initializeApp(itemView.context)
-                val auth = FirebaseAuth.getInstance()
-                if (auth.currentUser != null) {
-                    val userId = auth.currentUser!!.uid
-                    FirebaseDatabase.getInstance()
-                        .getReference("users")
-                        .child(userId)
-                        .addListenerForSingleValueEvent(object : ValueEventListener {
-                            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                                val mUser = dataSnapshot.getValue(User::class.java)!!
-                                if (mUser.seen != null) {
-                                    Log.e(TAG, "Previous seenList: ${mUser.seen}")
-                                    try{
-                                        val gson = Gson()
-                                        val type = object : TypeToken<ArrayList<String>>() {}.type
-                                        seenList.addAll(gson.fromJson(mUser.seen,
-                                            type)) //returning the list
-                                        Log.e(TAG, "Previous + new seenList: $seenList ")
-                                    }
-                                    catch (e: Exception) {
-                                        Log.e(TAG, "Previous + new seenList:  Exception : $e ")
-                                    }
-                                    setSeen(videoData)
-                                    hasPreviousFetched = true
-                                }
-                            }
-                            override fun onCancelled(databaseError: DatabaseError) {
-                                Toast.makeText(itemView.context,
-                                    "Error Fetching Data! Check Network Connection!",
-                                    Toast.LENGTH_SHORT).show()
-                                hasPreviousFetched = true
-                            }
-                        })
-                }
-            }
-            else {
-                Log.e(TAG, ": Updating Seen List")
-                setSeen(videoData)
-            }
-
         } else {
             binding.previewImage.visibility = View.GONE
             binding.waShare.visibility = View.GONE
@@ -193,26 +142,37 @@ internal class PageViewHolder(
         }
     }
 
-    private fun setSeen(videoData: VideoData) {
+    private suspend fun setSeen(videoData: VideoData) {
         if (!videoData.key.isNullOrEmpty()) {
-            seenList.add(videoData.key!!.toString())
-            val json = Gson().toJson(seenList)//converting list to Json
-            Log.e(TAG, "seen Json = $json")
             val auth = FirebaseAuth.getInstance()
-            if (auth.currentUser != null && hasPreviousFetched) {
-                val userId = auth.currentUser!!.uid
-                val reference = FirebaseDatabase.getInstance()
-                    .getReference("users")
-                    .child(userId)
-                reference.child("seen").setValue(json)
+            val userId = auth.currentUser?.uid
+
+            if (userId != null) {
+                val videoRef = FirebaseDatabase.getInstance().getReference("posts").child(videoData.key!!)
+                val watchedByRef = videoRef.child("watchedBy").child(userId)
+
+                watchedByRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        if (!snapshot.exists()) {
+                            // Add the user ID to the "watchedBy" list for the video
+                            val watchedByUpdate = HashMap<String, Any>()
+                            watchedByUpdate[userId] = true
+                            videoRef.child("watchedBy").updateChildren(watchedByUpdate)
+                        }
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        Log.e(TAG, "onCancelled: $error", )
+                        // Handle errors
+                    }
+                })
             }
         }
     }
 
     private fun refreshAd(adContainer: FrameLayout) {
         val context = itemView.context
-        val builder =
-            AdLoader.Builder(context, context.getString(R.string.NATIVE_ADD_ID))
+        val builder = AdLoader.Builder(context, context.getString(R.string.NATIVE_ADD_ID))
         builder.forNativeAd { nativeAd ->
             currentNativeAd?.destroy()
             currentNativeAd = nativeAd
@@ -349,6 +309,14 @@ internal class PageViewHolder(
                 previewImage.isVisible = true
             }
         binding.playerContainer.addView(appPlayerView.view)
+        /**
+        add this user to current video watchedBy
+         */
+        Log.e(TAG, "video ID : : ${videoData.id}")
+        Log.e(TAG, ": Updating Seen List")
+        itemView.findViewTreeLifecycleOwner()?.lifecycleScope?.launch{
+            setSeen(videoData)
+        }
     }
 
     fun renderEffect(effect: PageEffect) {

@@ -9,47 +9,38 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.annotation.NonNull
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.commit
 import androidx.fragment.app.replace
-import androidx.lifecycle.lifecycleScope
-import com.google.common.reflect.TypeToken
 import com.google.firebase.FirebaseApp
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
-import com.google.gson.Gson
+import com.google.firebase.database.*
 import com.onesignal.OneSignal
 import com.player.models.VideoData
 import com.videopager.ui.VideoPagerFragment
-import kotlinx.coroutines.Dispatchers
 import vfunny.shortvideovfunnyapp.BuildConfig.APPLICATION_ID
 import vfunny.shortvideovfunnyapp.Live.di.MainModule
 import vfunny.shortvideovfunnyapp.Login.Loginutils.AuthManager
 import vfunny.shortvideovfunnyapp.Login.data.Const
+import vfunny.shortvideovfunnyapp.Login.data.Post
 import vfunny.shortvideovfunnyapp.Login.data.User
 import vfunny.shortvideovfunnyapp.R
 import vfunny.shortvideovfunnyapp.databinding.MainActivityBinding
-import java.lang.Exception
 import java.util.*
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.tasks.await
+import kotlin.collections.ArrayList
 
 class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
     private val TAG: String = "MainActivity"
-    private var seenList = arrayListOf<String>()
     private var mUser: User? = null
     private var context: Context? = null
     private var activity: MainActivity? = null
     private var notificationVideoUrl: String? = null
     private var notificationThumbnailUrl: String? = null
     private var isAdsEnabled: Boolean = false
+    val videoItemList = ArrayList<VideoData> ()
 
     companion object {
-        private val postsDbRef =
-            FirebaseDatabase.getInstance().getReference("posts").limitToLast(100)
+
         const val ADS_TYPE = "ads"
         const val ITEM_COUNT_THRESHOLD = 5
         const val ADS_FREQUENCY = 5
@@ -83,94 +74,74 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
                     intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
                     startActivity(intent)
                 }
-
             }
         }
         User.currentKey()?.let { currentKey ->
             User.collection(currentKey).run {
                 addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(dataSnapshot: DataSnapshot) {
-                        val mUser = dataSnapshot.getValue(User::class.java)
-                        mUser?.seen?.let { seen ->
-                            Log.e(TAG, "seenList: $seen")
-                            val gson = Gson()
-                            val listType = object : TypeToken<ArrayList<String>>() {}.type
-                            try {
-                                seenList = gson.fromJson(seen, listType)
-                            } catch (e: Exception) {
-                                Log.e(TAG, "seenList: Error : $e")
-                            }
-                            val videoItemList = ArrayList<VideoData>()
-                                lifecycleScope.launch {
-                                    val snapshot = withContext(Dispatchers.IO) {
-                                        postsDbRef.get().await()
-                                    }
+                    val postsRef: DatabaseReference = FirebaseDatabase.getInstance().getReference("posts")
+                    val unwatchedPostsQuery: Query = postsRef.orderByChild("watchedBy/${User.currentKey()}").equalTo(null).limitToLast(100)
+                        var count = 0
+                        var videoCount = 0
+                        unwatchedPostsQuery.addListenerForSingleValueEvent(object :
+                            ValueEventListener {
+                            override fun onDataChange(snapshot: DataSnapshot) {
+                                val unwatchedPosts: MutableList<Post?> = ArrayList()
 
-                                    var count = 0
-                                    var videoCount = 0
-
-                                    if (notificationVideoUrl != null) {
-                                        count++
-                                        videoItemList.add(
-                                            VideoData(
-                                                count.toString(),
-                                                notificationVideoUrl.toString(),
-                                                notificationThumbnailUrl.toString(),
-                                                key = ""
-                                            )
-                                        )
-                                    }
-
-                                    snapshot.children.reversed().forEach {
-                                        val video: String = it.child("video").value.toString()
-                                        val image: String = it.child("image").value.toString()
-                                        for (key in seenList) {
-                                            if (it.key == key) {
-                                                return@forEach
-                                            }
-                                        }
-                                        count++
-                                        videoCount++
-                                        videoItemList.add(
-                                            VideoData(
-                                                count.toString(),
-                                                video,
-                                                image,
-                                                key = it.key
-                                            )
-                                        )
-                                        val totalItemCount = ITEM_COUNT_THRESHOLD + seenList.size
-                                        if (isAdsEnabled && videoCount % ADS_FREQUENCY == 0 && videoCount != totalItemCount) {
-                                            count++
-                                            videoItemList.add(
-                                                VideoData(
-                                                    count.toString(),
-                                                    "",
-                                                    "",
-                                                    type = ADS_TYPE,
-                                                    key = null
-                                                )
-                                            )
-                                        }
-                                    }
-
-                                    val module = MainModule(activity!!, videoItemList)
-                                    supportFragmentManager.fragmentFactory = module.fragmentFactory
-                                    if (savedInstanceState == null) {
-                                        supportFragmentManager.commit {
-                                            replace<VideoPagerFragment>(binding.fragmentContainer.id)
-                                        }
-                                    }
+                                // Loop through all the fetched posts
+                                for (postSnapshot in snapshot.children) {
+                                    val postKey = postSnapshot.key
+                                    // Convert the post data to a Post object
+                                    val post: Post? = postSnapshot.getValue(Post::class.java)
+                                    post?.key = postKey // Add the key to the Post object
+                                    unwatchedPosts.add(post)
                                 }
-                        }
-                    }
 
-                    override fun onCancelled(databaseError: DatabaseError) {
-                        Toast.makeText(
-                            context,
-                            "Error Fetching Data! Check Network Connection!",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                                // Pass the list of unwatched posts to your application
+                                unwatchedPosts.reversed().forEach {
+                                val video: String = it?.video ?: ""
+                                val image: String = it?.image ?: ""
+                                val key: String? = it?.key
+                                count++
+                                videoCount++
+                                    videoItemList.add(
+                                    VideoData(
+                                        count.toString(),
+                                        video,
+                                        image,
+                                        key = key
+                                    )
+                                )
+                                val totalItemCount = ITEM_COUNT_THRESHOLD
+                                if (isAdsEnabled && videoCount % ADS_FREQUENCY == 0 && videoCount != totalItemCount) {
+                                    count++
+                                    videoItemList.add(
+                                        VideoData(
+                                            count.toString(),
+                                            "",
+                                            "",
+                                            type = ADS_TYPE
+                                        )
+                                    )
+                                }
+                            }
+
+                            val module = MainModule(activity!!, videoItemList)
+                            supportFragmentManager.fragmentFactory = module.fragmentFactory
+                            if (savedInstanceState == null) {
+                                supportFragmentManager.commit {
+                                    replace<VideoPagerFragment>(binding.fragmentContainer.id)
+                                }
+                            }
+                        }
+                            override fun onCancelled(error: DatabaseError) {
+                                TODO("Not yet implemented")
+                            }
+                    })
+                }
+                    override fun onCancelled(error: DatabaseError) {
+                        Toast.makeText(context,"Something went wrong : $error", Toast.LENGTH_LONG).show()
                     }
                 })
             }
@@ -194,7 +165,7 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
             }
 
             override fun onAnimationRepeat(p0: Animator) {
-                TODO("Not yet implemented")
+                Log.e("TAG", "onAnimationRepeat: $p0")
             }
 
         })
