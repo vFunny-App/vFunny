@@ -92,10 +92,8 @@ public class AuthManager implements FirebaseAuth.AuthStateListener {
                 if (!dataSnapshot.exists() || dataSnapshot.child("name").getValue() == null) {
                     bundle.putString(FirebaseAnalytics.Param.ITEM_ID, fbuser.getUid());
                     bundle.putString(FirebaseAnalytics.Param.ITEM_NAME, fbuser.getDisplayName());
-                    bundle.putString("seen", "{''}");
                     user = new User();
                     user.setName(fbuser.getDisplayName());
-                    user.setSeen("[\"\"]]");
                     if (fbuser.getPhotoUrl() != null) {
                         user.setPhoto(fbuser.getPhotoUrl().getPath());
                     }

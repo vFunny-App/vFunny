@@ -19,7 +19,6 @@ public class User {
 
     private String id;
     private String name;
-    private String seen;
     private String photo;
     private String bio;
 
@@ -115,13 +114,6 @@ public class User {
     }
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getSeen() {
-        return seen;
-    }
-    public void setSeen(String seen) {
-        this.seen = seen;
     }
 
     public String getPhoto() {
