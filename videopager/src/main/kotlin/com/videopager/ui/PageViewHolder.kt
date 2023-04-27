@@ -143,21 +143,28 @@ internal class PageViewHolder(
     }
 
     private suspend fun setSeen(videoData: VideoData) {
+        Log.e(TAG, "setSeen Ran", )
         if (!videoData.key.isNullOrEmpty()) {
+            Log.e(TAG, "check 1", )
             val auth = FirebaseAuth.getInstance()
             val userId = auth.currentUser?.uid
 
             if (userId != null) {
+                Log.e(TAG, "check 2", )
                 val videoRef = FirebaseDatabase.getInstance().getReference("posts").child(videoData.key!!)
                 val watchedByRef = videoRef.child("watchedBy").child(userId)
 
                 watchedByRef.addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
+                        Log.e(TAG, "check 3", )
                         if (!snapshot.exists()) {
+                            Log.e(TAG, "check 4", )
                             // Add the user ID to the "watchedBy" list for the video
                             val watchedByUpdate = HashMap<String, Any>()
                             watchedByUpdate[userId] = true
-                            videoRef.child("watchedBy").updateChildren(watchedByUpdate)
+                            videoRef.child("watchedBy").updateChildren(watchedByUpdate).addOnCompleteListener {
+                                Log.e(TAG, "check 5", )
+                            }
                         }
                     }
 

@@ -1,28 +1,22 @@
-package vfunny.shortvideovfunnyapp.Login.data;
+package vfunny.shortvideovfunnyapp.Login.data
 
 /**
- * Created on 06/07/2017.
- * Copyright by 01eg.me
+ * Created on 06/07/2019.
+ * Copyright by shresthasaurabh86@gmail.com
  */
-
-public final class Const {
-
+object Const {
     /**
      * Change this values to set another firebase key path.
      * Must be a non-empty string and not contain '.' '#' '$' '[' or ']'
      */
-
-    public static final String kAdsKey = "isAdsEnabled";
-    public static final String kUserFeedKey = "user_feed";
-    public static final String kUsersKey = "users";
-    public static final String kFollowersKey = "followers";
-    public static final String kFollowinsKey = "followings";
-    public static final String kDataRecentsKey = "recents";
-    public static final String kDataPostKey = "posts";
-    public static final String kDataCommentKey = "comments";
-    public static final String kDataLikeKey = "likes";
-    public static final String kDataUploadsKey = "uploads";
-    public static final String kChatsKey = "chats";
-    public static final String kMessagesKey = "messages";
-    public static final String kTopicsFeed = "topic";
+    const val kAdsKey = "isAdsEnabled"
+    const val kUsersKey = "users"
+    const val kFollowersKey = "followers"
+    const val kFollowinsKey = "followings"
+    const val kDataPostKey = "posts"
+    const val kWatchedBytKey = "watchedBy"
+    const val kDataUploadsKey = "uploads"
+    const val kChatsKey = "chats"
+    const val kMessagesKey = "messages"
+    const val kTopicsFeed = "topic"
 }
