@@ -5,20 +5,17 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
-import android.os.Build;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 
-import androidx.core.app.NotificationCompat;
-
-import org.json.JSONObject;
-
-import com.onesignal.OSNotification;
 import com.onesignal.OSMutableNotification;
+import com.onesignal.OSNotification;
 import com.onesignal.OSNotificationReceivedEvent;
 import com.onesignal.OneSignal.OSRemoteNotificationReceivedHandler;
+
+import org.json.JSONObject;
 
 import java.math.BigInteger;
 

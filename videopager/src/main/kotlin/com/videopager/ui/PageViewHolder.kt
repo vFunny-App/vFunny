@@ -19,11 +19,11 @@ import com.google.android.gms.ads.formats.NativeAdOptions
 import com.google.android.gms.ads.nativead.NativeAd
 import com.google.android.gms.ads.nativead.NativeAdView
 import com.google.android.material.snackbar.Snackbar
-import com.google.common.reflect.TypeToken
-import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
-import com.google.gson.Gson
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import com.player.models.VideoData
 import com.player.ui.AppPlayerView
 import com.videopager.R
@@ -31,7 +31,6 @@ import com.videopager.databinding.PageItemBinding
 import com.videopager.models.AnimationEffect
 import com.videopager.models.PageEffect
 import com.videopager.models.ResetAnimationsEffect
-import com.videopager.models.User
 import com.videopager.ui.extensions.findParentById
 import kotlinx.coroutines.launch
 import java.util.*

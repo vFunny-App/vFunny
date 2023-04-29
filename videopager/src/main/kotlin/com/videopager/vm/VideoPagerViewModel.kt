@@ -1,41 +1,13 @@
 package com.videopager.vm
 
 import android.util.Log
+import com.player.players.AppPlayer
 import com.videopager.R
 import com.videopager.data.VideoDataRepository
-import com.player.players.AppPlayer
 import com.videopager.models.*
-import com.videopager.models.AnimationEffect
-import com.videopager.models.AttachPlayerToViewResult
-import com.videopager.models.CreatePlayerResult
-import com.videopager.models.LoadVideoDataEvent
-import com.videopager.models.LoadVideoDataResult
-import com.videopager.models.NoOpResult
-import com.videopager.models.OnNewPageSettledResult
-import com.videopager.models.OnPageSettledEvent
-import com.videopager.models.OnPlayerRenderingResult
-import com.videopager.models.PauseVideoEvent
-import com.videopager.models.PlayerErrorEffect
-import com.videopager.models.PlayerErrorResult
-import com.videopager.models.PlayerLifecycleEvent
-import com.videopager.models.ResetAnimationsEffect
-import com.videopager.models.TappedPlayerEvent
-import com.videopager.models.TappedPlayerResult
-import com.videopager.models.TearDownPlayerResult
-import com.videopager.models.ViewEffect
-import com.videopager.models.ViewEvent
-import com.videopager.models.ViewResult
-import com.videopager.models.ViewState
 import com.videopager.ui.extensions.ViewState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.filterNot
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapLatest
-import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.*
 
 /**
  * Owns a stateful [ViewState.appPlayer] instance that will get created and torn down in parallel

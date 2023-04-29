@@ -10,7 +10,6 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Toast
-import androidx.annotation.NonNull
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.commit
 import androidx.fragment.app.replace
@@ -27,8 +26,6 @@ import vfunny.shortvideovfunnyapp.Login.data.Post
 import vfunny.shortvideovfunnyapp.Login.data.User
 import vfunny.shortvideovfunnyapp.R
 import vfunny.shortvideovfunnyapp.databinding.MainActivityBinding
-import java.util.*
-import kotlin.collections.ArrayList
 
 class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
     private val TAG: String = "MainActivity"
@@ -56,12 +53,15 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
         binding.animationView.addAnimatorListener(object : Animator.AnimatorListener {
             override fun onAnimationStart(p0: Animator) {
             }
+
             override fun onAnimationEnd(p0: Animator) {
                 binding.progressCircular.visibility = View.VISIBLE
             }
+
             override fun onAnimationCancel(p0: Animator) {
                 Log.e("TAG", "onAnimationCancel: $p0")
             }
+
             override fun onAnimationRepeat(p0: Animator) {
                 Log.e("TAG", "onAnimationRepeat: $p0")
             }
@@ -82,11 +82,11 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
                                 .limitToLast(100)
                         var count = 0
                         var videoCount = 0
-                        Log.e(TAG, "onDataChange: Starting unwatchedPostsQuery ", )
+                        Log.e(TAG, "onDataChange: Starting unwatchedPostsQuery ")
                         unwatchedPostsQuery.addListenerForSingleValueEvent(object :
                             ValueEventListener {
                             override fun onDataChange(snapshot: DataSnapshot) {
-                                Log.e(TAG, "onDataChange: response from unwatchedPostsQuery ", )
+                                Log.e(TAG, "onDataChange: response from unwatchedPostsQuery ")
                                 val unwatchedPosts: MutableList<Post?> = ArrayList()
 
                                 // Loop through all the fetched posts
@@ -140,7 +140,9 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
                             }
 
                             override fun onCancelled(error: DatabaseError) {
-                                Toast.makeText(context, "Something went wrong : $error", Toast.LENGTH_LONG)
+                                Toast.makeText(context,
+                                    "Something went wrong : $error",
+                                    Toast.LENGTH_LONG)
                                     .show()
                             }
                         })
