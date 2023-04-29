@@ -42,7 +42,7 @@ import vfunny.shortvideovfunnyapp.Login.data.User;
 
 /**
  * Created on 26/05/2017.
- * Copyright by 01eg.me
+ * Copyright by Shresthasaurabh86@gmail.com
  */
 
 public class MediaUtils {

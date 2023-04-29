@@ -45,6 +45,65 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/addBtn"
+        android:src="@android:drawable/ic_input_add"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="@dimen/fui_auth_method_button_margin"
+        android:layout_marginTop="@dimen/fui_auth_method_button_margin"
+        android:layout_marginEnd="@dimen/fui_auth_method_button_margin"
+        android:layout_marginBottom="@dimen/fui_auth_method_button_margin"
+        android:backgroundTint="#B7B7B7"
+        android:contentDescription="add"/>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/updateNotification"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/addCard"
+        android:layout_alignStart="@+id/addCard"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="@dimen/fui_auth_method_button_margin"
+        android:layout_marginEnd="@dimen/fui_auth_method_button_margin"
+        android:layout_marginBottom="@dimen/fui_auth_method_button_margin"
+        android:backgroundTint="#B7B7B7"
+        android:clickable="true"
+        app:cardCornerRadius="30dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_margin="10dp"
+            android:text="Send Update \nNotification"
+            android:textStyle="bold"
+            app:cardCornerRadius="30dp" />
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/addCard"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/fui_auth_method_button_margin"
+        android:layout_above="@+id/addBtn"
+        app:cardCornerRadius="30dp"
+        android:layout_alignParentEnd="true">
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/adsSwitch"
+            android:layout_width="wrap_content"
+            android:text="ads"
+            android:textColor="@color/black"
+            android:padding="10dp"
+            android:background="#B7B7B7"
+            android:layout_height="wrap_content"
+            android:contentDescription="add"
+            android:src="@android:drawable/ic_input_add" />
+
+    </androidx.cardview.widget.CardView>
 <!--    &lt;!&ndash; view for AdMob Banner Ad &ndash;&gt;-->
 <!--    <com.google.android.gms.ads.AdView-->
 <!--        android:id="@+id/adView"-->

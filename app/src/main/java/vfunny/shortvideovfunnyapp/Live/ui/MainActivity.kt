@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -21,6 +22,7 @@ import com.google.android.gms.ads.RequestConfiguration
 import com.google.common.reflect.TypeToken
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.*
+import com.google.firebase.storage.FirebaseStorage
 import com.google.gson.Gson
 import com.onesignal.OneSignal
 import com.player.models.VideoData
@@ -29,6 +31,7 @@ import vfunny.shortvideovfunnyapp.BuildConfig.APPLICATION_ID
 import vfunny.shortvideovfunnyapp.Live.di.MainModule
 import vfunny.shortvideovfunnyapp.Login.Loginutils.AuthManager
 import vfunny.shortvideovfunnyapp.Login.data.Const
+import vfunny.shortvideovfunnyapp.Login.data.Post
 import vfunny.shortvideovfunnyapp.Login.data.User
 import vfunny.shortvideovfunnyapp.R
 import vfunny.shortvideovfunnyapp.databinding.MainActivityBinding
