@@ -12,14 +12,13 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
+        android:screenOrientation="portrait"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Exoviewpagerfun"
-        android:screenOrientation="portrait">
-
+        android:theme="@style/Theme.Exoviewpagerfun">
         <activity
             android:name=".Live.ui.MainActivity"
-            android:icon="@mipmap/ic_launcher"
-            android:exported="true">
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -30,12 +29,10 @@
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="@string/APP_ID" />
 
-        <service android:name="com.exo.service.VideoPreLoadingService"/>
-
-        <!-- name doesn't change, value = your class fully name spaced-->
-        <meta-data android:name="com.onesignal.NotificationServiceExtension"
+        <service android:name="com.exo.service.VideoPreLoadingService" /> <!-- name doesn't change, value = your class fully name spaced -->
+        <meta-data
+            android:name="com.onesignal.NotificationServiceExtension"
             android:value="vfunny.shortvideovfunnyapp.Notification.NotificationServiceExtension" />
-
     </application>
 
 </manifest>

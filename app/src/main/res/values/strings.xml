@@ -6,5 +6,7 @@
     <string name="eula" translatable="false">https://termsfeed.com/eula/generator/</string>
     <string name="privacy_policy" translatable="false">https://termsfeed.com/eula/generator/</string>
     <string name="name_placeholder">name</string>
+    <string name="upload_pending">Pending</string>
+    <string name="upload_complete">Completed</string>
 
 </resources>
