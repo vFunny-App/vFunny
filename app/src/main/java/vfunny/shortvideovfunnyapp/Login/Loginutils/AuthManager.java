@@ -29,7 +29,7 @@ import vfunny.shortvideovfunnyapp.Login.data.User;
 import vfunny.shortvideovfunnyapp.R;
 
 /**
- * Created by 01eg.me 04/05/2017.
+ * Created by shresthasaurabh86@gmail.com 04/05/2019.
  */
 
 public class AuthManager implements FirebaseAuth.AuthStateListener {
@@ -56,9 +56,9 @@ public class AuthManager implements FirebaseAuth.AuthStateListener {
             User.current().child("lang").setValue(locale); // update lang configuration
         } else {
             final List providers = Arrays.asList(
-                    new AuthUI.IdpConfig.EmailBuilder().build()
-//                    new AuthUI.IdpConfig.GoogleBuilder().build(),
-//                    new AuthUI.IdpConfig.PhoneBuilder().setDefaultCountryIso("IN").build()
+                    new AuthUI.IdpConfig.EmailBuilder().build(),
+                    new AuthUI.IdpConfig.GoogleBuilder().build(),
+                    new AuthUI.IdpConfig.PhoneBuilder().setDefaultCountryIso("IN").build()
             );
 
             final String eula = activity.getString(R.string.eula);
@@ -92,10 +92,8 @@ public class AuthManager implements FirebaseAuth.AuthStateListener {
                 if (!dataSnapshot.exists() || dataSnapshot.child("name").getValue() == null) {
                     bundle.putString(FirebaseAnalytics.Param.ITEM_ID, fbuser.getUid());
                     bundle.putString(FirebaseAnalytics.Param.ITEM_NAME, fbuser.getDisplayName());
-                    bundle.putString("seen", "{''}");
                     user = new User();
                     user.setName(fbuser.getDisplayName());
-                    user.setSeen("[\"\"]]");
                     if (fbuser.getPhotoUrl() != null) {
                         user.setPhoto(fbuser.getPhotoUrl().getPath());
                     }

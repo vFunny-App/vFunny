@@ -10,12 +10,19 @@ android {
     compileSdkVersion 33
     buildToolsVersion "30.0.3"
 
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
     defaultConfig {
         applicationId 'vfunny.shortvideovfunnyapp'
         minSdkVersion 21
         targetSdkVersion 33
-        versionCode 13
-        versionName "6.0.7"
+        versionCode 17
+        versionName "7.0.1"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -54,6 +61,7 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.4'
     implementation 'androidx.activity:activity-ktx:1.5.1'
     implementation 'io.coil-kt:coil:2.2.0'
     implementation 'androidx.fragment:fragment-ktx:1.5.2'
@@ -71,4 +79,5 @@ dependencies {
     implementation "com.firebaseui:firebase-ui:6.0.2"
     // OneSignal dependency
     implementation 'com.onesignal:OneSignal:4.8.2'
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.7'
 }

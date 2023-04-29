@@ -15,40 +15,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "922248311303-jinklepc1jknvb4ol0cmnj4rnir45o9j.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyB55tdcqH6cn8ULwPW2rNC3aht_UUIthpE"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "922248311303-jinklepc1jknvb4ol0cmnj4rnir45o9j.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:922248311303:android:51868e71bbe7ee4d2df0a2",
-        "android_client_info": {
-          "package_name": "vfunny.vfunnyupload"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "922248311303-stts0ellchoditc8ks6u7c4ks7pe2ds3.apps.googleusercontent.com",
+          "client_id": "922248311303-pvktdq6dtfacg5gc9bb7q2o41lc46cqd.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "vfunny.vfunnyupload",
-            "certificate_hash": "823abb4b76c1a3b91e9c435c55b522d7be061fee"
+            "package_name": "vfunny.shortvideovfunnyapp",
+            "certificate_hash": "b4f7aa37866430c8a143dc3736bf1545c51679d6"
           }
         },
         {

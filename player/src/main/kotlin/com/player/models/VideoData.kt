@@ -6,5 +6,5 @@ data class VideoData(
     val previewImageUri: String,
     val aspectRatio: Float? = null,
     val type: String? = "video",
-    val key: String?
+    val key: String?  = null,
 )
