@@ -21,26 +21,30 @@ import com.google.android.gms.ads.formats.NativeAdOptions
 import com.google.android.gms.ads.nativead.NativeAd
 import com.google.android.gms.ads.nativead.NativeAdView
 import com.google.android.material.snackbar.Snackbar
-import com.google.common.reflect.TypeToken
-import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
-import com.google.gson.Gson
+import com.onesignal.OneSignal
 import com.player.models.VideoData
 import com.player.ui.AppPlayerView
+import com.squareup.okhttp.*
 import com.videopager.R
 import com.videopager.databinding.PageItemBinding
 import com.videopager.models.AnimationEffect
 import com.videopager.models.PageEffect
 import com.videopager.models.ResetAnimationsEffect
-import com.videopager.models.User
 import com.videopager.ui.extensions.findParentById
 import kotlinx.coroutines.launch
+import org.json.JSONException
+import org.json.JSONObject
+import java.io.IOException
 import java.util.*
 
-var seenList = mutableListOf<String>()
-var hasPreviousFetched : Boolean = false
+val ONESIGNAL_APP_ID = "0695d934-66e2-43f6-9853-dbedd55b86ca"
+val REST_API_KEY = "MzBhMWIzODMtY2U3OC00OTlhLTkwMDEtM2UxZWExYjU5Nzg5"
 
 internal class PageViewHolder(
     private val binding: PageItemBinding,
@@ -50,6 +54,7 @@ internal class PageViewHolder(
     private lateinit var videoData: VideoData
     private val TAG: String = "PageViewHolder"
     private val animationEffect = FadeInThenOutAnimationEffect(binding.playPause)
+
     init {
         binding.root.setOnClickListener { click() }
     }
@@ -89,11 +94,12 @@ internal class PageViewHolder(
         val userId = FirebaseAuth.getInstance().currentUser!!.uid
         val thumbnailRef = storage.getReferenceFromUrl(videoData.previewImageUri)
         val videoRef = storage.getReferenceFromUrl(videoData.mediaUri)
-        val dbReference = FirebaseDatabase.getInstance().getReference("posts").child(videoData.key!!)
-        Log.e(TAG, "deleteItem: ${videoData.previewImageUri}",)
-        Log.e(TAG, "deleteItem: ${videoData.mediaUri}",)
-        Log.e(TAG, "thumbnailRef: $thumbnailRef",)
-        Log.e(TAG, "videoRef: $videoRef",)
+        val dbReference =
+            FirebaseDatabase.getInstance().getReference("posts").child(videoData.key!!)
+        Log.e(TAG, "deleteItem: ${videoData.previewImageUri}")
+        Log.e(TAG, "deleteItem: ${videoData.mediaUri}")
+        Log.e(TAG, "thumbnailRef: $thumbnailRef")
+        Log.e(TAG, "videoRef: $videoRef")
         builder.setCancelable(false)
         builder.setMessage("Do you want to delete this item?")
             .setPositiveButton("Yes") { dialog, id ->
@@ -107,22 +113,26 @@ internal class PageViewHolder(
                 if (thumbnailSegments.size == 2) {
                     val thumbnailFolderName = thumbnailSegments[0]
                     val thumbnailFileName = thumbnailSegments[1]
-                    storageReference.child(thumbnailFolderName).child(thumbnailFileName).delete().addOnFailureListener { e: java.lang.Exception ->
+                    storageReference.child(thumbnailFolderName).child(thumbnailFileName).delete()
+                        .addOnFailureListener { e: java.lang.Exception ->
                             if (progressDialog.isShowing) {
                                 progressDialog.dismiss()
                             }
-                            Toast.makeText(context, "Failed " + e.message, Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Failed " + e.message, Toast.LENGTH_SHORT)
+                                .show()
                             Log.e("TAG", "Failed : " + e.message)
                         }
                 }
                 if (videoSegments.size == 2) {
                     val videoFolderName = videoSegments[0]
                     val videoFileName = videoSegments[1]
-                    storageReference.child(videoFolderName).child(videoFileName).delete().addOnFailureListener { e: java.lang.Exception ->
+                    storageReference.child(videoFolderName).child(videoFileName).delete()
+                        .addOnFailureListener { e: java.lang.Exception ->
                             if (progressDialog.isShowing) {
                                 progressDialog.dismiss()
                             }
-                            Toast.makeText(context, "Failed " + e.message, Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Failed " + e.message, Toast.LENGTH_SHORT)
+                                .show()
                             Log.e("TAG", "Failed : " + e.message)
                         }
                 }
@@ -137,6 +147,47 @@ internal class PageViewHolder(
                 Toast.makeText(context, "Cancelled", Toast.LENGTH_SHORT).show()
             }
         builder.create().show()
+    }
+
+    fun sendVideoNotification(thumbnailRef: String?, videoRef: String?) {
+        Thread(Runnable {
+            val deviceState = OneSignal.getDeviceState()
+            val userId = deviceState?.userId
+            val isSubscribed = deviceState != null && deviceState.isSubscribed
+            if (!isSubscribed) return@Runnable
+            try {
+                val notificationContent = JSONObject(
+                    "{'included_segments': ['Subscribed Users']," +
+                            "'app_id': '$ONESIGNAL_APP_ID'," +
+                            "'headings': {'en': 'Check out this funny video!\uD83D\uDE00\uD83D\uDE05\uD83D\uDE02\uD83E\uDD23'}," +
+                            "'contents': {'en': 'Look at this funny video \uD83D\uDE02. Fresh new memes available!'}," +
+                            "'large_icon' : '$thumbnailRef'," +
+                            "'big_picture' : '$thumbnailRef'," +
+                            "'data': {'video_url': '$videoRef', 'thumbnail_url': '$thumbnailRef'}}"
+                )
+                val client = OkHttpClient()
+                val json = MediaType.parse("application/json; charset=utf-8")
+                val body = RequestBody.create(json, notificationContent.toString())
+
+                val request = Request.Builder()
+                    .url("https://onesignal.com/api/v1/notifications")
+                    .addHeader("Authorization", "Basic $REST_API_KEY")
+                    .post(body)
+                    .build()
+
+                client.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(request: Request?, e: IOException?) {
+                        Log.e(TAG, "onFailure: $e")
+                    }
+
+                    override fun onResponse(response: Response?) {
+                        Log.e(TAG, "onResponse: $response")
+                    }
+                })
+            } catch (e: JSONException) {
+                e.printStackTrace()
+            }
+        }).start()
     }
 
     private fun moreOptionClick(url: String, view: View) {
@@ -190,6 +241,28 @@ internal class PageViewHolder(
             binding.deleteItem.setOnClickListener {
                 deleteItem(videoData)
             }
+            binding.sendNoti.setOnClickListener {
+                val context = itemView.context
+                val builder = AlertDialog.Builder(context)
+                val storage = FirebaseStorage.getInstance()
+                val thumbnailRef = storage.getReferenceFromUrl(videoData.previewImageUri)
+                val videoRef = storage.getReferenceFromUrl(videoData.mediaUri)
+                Log.e(TAG, "sendNotification: previewImageUri :  ${videoData.previewImageUri}")
+                Log.e(TAG, "sendNotification: mediaUri : ${videoData.mediaUri}")
+                Log.e(TAG, "thumbnailRef: $thumbnailRef")
+                Log.e(TAG, "videoRef: $videoRef")
+                builder.setCancelable(false)
+                builder.setMessage("Do you want to send notification for this item?")
+                    .setPositiveButton("Yes") { dialog, id ->
+                        // Launch the coroutine to perform the network operation
+                        sendVideoNotification(videoData.previewImageUri, videoData.mediaUri)
+                    }.setNegativeButton("No") { dialog, id ->
+                        // User cancelled the dialog
+                        Toast.makeText(context, "Cancelled", Toast.LENGTH_SHORT).show()
+                    }
+                builder.create().show()
+            }
+
             ConstraintSet().apply {
                 clone(binding.root)
                 val ratio = videoData.aspectRatio?.let { "$it:1" }
@@ -216,7 +289,8 @@ internal class PageViewHolder(
             val userId = auth.currentUser?.uid
 
             if (userId != null) {
-                val videoRef = FirebaseDatabase.getInstance().getReference("posts").child(videoData.key!!)
+                val videoRef =
+                    FirebaseDatabase.getInstance().getReference("posts").child(videoData.key!!)
                 val watchedByRef = videoRef.child("watchedBy").child(userId)
 
                 watchedByRef.addListenerForSingleValueEvent(object : ValueEventListener {
@@ -230,7 +304,7 @@ internal class PageViewHolder(
                     }
 
                     override fun onCancelled(error: DatabaseError) {
-                        Log.e(TAG, "onCancelled: $error", )
+                        Log.e(TAG, "onCancelled: $error")
                         // Handle errors
                     }
                 })
@@ -382,7 +456,7 @@ internal class PageViewHolder(
          */
         Log.e(TAG, "video ID : : ${videoData.id}")
         Log.e(TAG, ": Updating Seen List")
-        itemView.findViewTreeLifecycleOwner()?.lifecycleScope?.launch{
+        itemView.findViewTreeLifecycleOwner()?.lifecycleScope?.launch {
             setSeen(videoData)
         }
     }

@@ -6,10 +6,10 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import coil.ImageLoader
+import com.player.models.VideoData
 import com.player.ui.AppPlayerView
 import com.videopager.databinding.PageItemBinding
 import com.videopager.models.PageEffect
-import com.player.models.VideoData
 import com.videopager.ui.extensions.awaitNextLayout
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -26,9 +26,10 @@ import kotlinx.coroutines.isActive
  * be visible. It's called when the ExoPlayer instance has started rendering its first frame.
  */
 internal class PagerAdapter(
-    private val imageLoader: ImageLoader
+    private val imageLoader: ImageLoader,
 ) : ListAdapter<VideoData, PageViewHolder>(VideoDataDiffCallback) {
     private var recyclerView: RecyclerView? = null
+
     // Extra buffer capacity so that emissions can be sent outside a coroutine
     private val clicks = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
