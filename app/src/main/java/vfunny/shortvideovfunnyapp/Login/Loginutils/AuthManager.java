@@ -29,7 +29,7 @@ import vfunny.shortvideovfunnyapp.Login.data.User;
 import vfunny.shortvideovfunnyapp.R;
 
 /**
- * Created by 01eg.me 04/05/2017.
+ * Created by shresthasaurabh86@gmail.com 04/05/2019.
  */
 
 public class AuthManager implements FirebaseAuth.AuthStateListener {

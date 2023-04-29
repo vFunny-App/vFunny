@@ -10,6 +10,13 @@ android {
     compileSdkVersion 33
     buildToolsVersion "30.0.3"
 
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
     defaultConfig {
         applicationId 'vfunny.shortvideovfunnyapp'
         minSdkVersion 21

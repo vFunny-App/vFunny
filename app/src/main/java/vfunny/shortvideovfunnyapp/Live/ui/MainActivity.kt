@@ -4,6 +4,7 @@ import android.animation.Animator
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -37,7 +38,7 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
     private var notificationVideoUrl: String? = null
     private var notificationThumbnailUrl: String? = null
     private var isAdsEnabled: Boolean = false
-    val videoItemList = ArrayList<VideoData> ()
+    val videoItemList = ArrayList<VideoData>()
 
     companion object {
 
@@ -52,7 +53,107 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
         activity = this
         super.onCreate(savedInstanceState)
         val binding = MainActivityBinding.inflate(layoutInflater)
+        binding.animationView.addAnimatorListener(object : Animator.AnimatorListener {
+            override fun onAnimationStart(p0: Animator) {
+            }
+            override fun onAnimationEnd(p0: Animator) {
+                binding.progressCircular.visibility = View.VISIBLE
+            }
+            override fun onAnimationCancel(p0: Animator) {
+                Log.e("TAG", "onAnimationCancel: $p0")
+            }
+            override fun onAnimationRepeat(p0: Animator) {
+                Log.e("TAG", "onAnimationRepeat: $p0")
+            }
+
+        })
+        binding.animationView.playAnimation()
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
         FirebaseApp.initializeApp(this.applicationContext)
+        User.currentKey()?.let { currentKey ->
+            User.collection(currentKey).run {
+                addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(dataSnapshot: DataSnapshot) {
+                        val postsRef: DatabaseReference =
+                            FirebaseDatabase.getInstance().getReference(Const.kDataPostKey)
+                        val unwatchedPostsQuery: Query =
+                            postsRef.orderByChild("${Const.kWatchedBytKey}/${User.currentKey()}")
+                                .equalTo(null)
+                                .limitToLast(100)
+                        var count = 0
+                        var videoCount = 0
+                        Log.e(TAG, "onDataChange: Starting unwatchedPostsQuery ", )
+                        unwatchedPostsQuery.addListenerForSingleValueEvent(object :
+                            ValueEventListener {
+                            override fun onDataChange(snapshot: DataSnapshot) {
+                                Log.e(TAG, "onDataChange: response from unwatchedPostsQuery ", )
+                                val unwatchedPosts: MutableList<Post?> = ArrayList()
+
+                                // Loop through all the fetched posts
+                                for (postSnapshot in snapshot.children) {
+                                    val postKey = postSnapshot.key
+                                    // Convert the post data to a Post object
+                                    val post: Post? = postSnapshot.getValue(Post::class.java)
+                                    post?.key = postKey // Add the key to the Post object
+                                    unwatchedPosts.add(post)
+                                }
+
+                                // Pass the list of unwatched posts to your application
+                                unwatchedPosts.reversed().forEach {
+                                    val video: String = it?.video ?: ""
+                                    val image: String = it?.image ?: ""
+                                    val key: String? = it?.key
+                                    count++
+                                    videoCount++
+                                    videoItemList.add(
+                                        VideoData(
+                                            count.toString(),
+                                            video,
+                                            image,
+                                            key = key
+                                        )
+                                    )
+                                    val totalItemCount = ITEM_COUNT_THRESHOLD
+                                    if (isAdsEnabled && videoCount % ADS_FREQUENCY == 0 && videoCount != totalItemCount) {
+                                        count++
+                                        videoItemList.add(
+                                            VideoData(
+                                                count.toString(),
+                                                "",
+                                                "",
+                                                type = ADS_TYPE
+                                            )
+                                        )
+                                    }
+                                }
+
+                                val module = MainModule(activity!!, videoItemList)
+                                supportFragmentManager.fragmentFactory = module.fragmentFactory
+                                if (savedInstanceState == null) {
+                                    supportFragmentManager.commit {
+                                        replace<VideoPagerFragment>(binding.fragmentContainer.id)
+                                    }
+                                }
+                                binding.animationView.clearAnimation()
+                                binding.fragmentContainer.visibility = View.VISIBLE
+                                binding.loadingLyt.removeAllViewsInLayout()
+                            }
+
+                            override fun onCancelled(error: DatabaseError) {
+                                Toast.makeText(context, "Something went wrong : $error", Toast.LENGTH_LONG)
+                                    .show()
+                            }
+                        })
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        Toast.makeText(context, "Something went wrong : $error", Toast.LENGTH_LONG)
+                            .show()
+                    }
+                })
+            }
+        } ?: AuthManager.getInstance().showLogin(this) // Show login screen if user key is null
+        setContentView(binding.root)
         OneSignal.setNotificationOpenedHandler { result ->
             val data = result.notification.additionalData
             Log.e(TAG, "NOTIFICATION additionalData :  ${result.notification.additionalData}")
@@ -76,134 +177,18 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
                 }
             }
         }
-        User.currentKey()?.let { currentKey ->
-            User.collection(currentKey).run {
-                addListenerForSingleValueEvent(object : ValueEventListener {
-                    override fun onDataChange(dataSnapshot: DataSnapshot) {
-                    val postsRef: DatabaseReference = FirebaseDatabase.getInstance().getReference("posts")
-                    val unwatchedPostsQuery: Query = postsRef.orderByChild("watchedBy/${User.currentKey()}").equalTo(null).limitToLast(100)
-                        var count = 0
-                        var videoCount = 0
-                        unwatchedPostsQuery.addListenerForSingleValueEvent(object :
-                            ValueEventListener {
-                            override fun onDataChange(snapshot: DataSnapshot) {
-                                val unwatchedPosts: MutableList<Post?> = ArrayList()
-
-                                // Loop through all the fetched posts
-                                for (postSnapshot in snapshot.children) {
-                                    val postKey = postSnapshot.key
-                                    // Convert the post data to a Post object
-                                    val post: Post? = postSnapshot.getValue(Post::class.java)
-                                    post?.key = postKey // Add the key to the Post object
-                                    unwatchedPosts.add(post)
-                                }
-
-                                // Pass the list of unwatched posts to your application
-                                unwatchedPosts.reversed().forEach {
-                                val video: String = it?.video ?: ""
-                                val image: String = it?.image ?: ""
-                                val key: String? = it?.key
-                                count++
-                                videoCount++
-                                    videoItemList.add(
-                                    VideoData(
-                                        count.toString(),
-                                        video,
-                                        image,
-                                        key = key
-                                    )
-                                )
-                                val totalItemCount = ITEM_COUNT_THRESHOLD
-                                if (isAdsEnabled && videoCount % ADS_FREQUENCY == 0 && videoCount != totalItemCount) {
-                                    count++
-                                    videoItemList.add(
-                                        VideoData(
-                                            count.toString(),
-                                            "",
-                                            "",
-                                            type = ADS_TYPE
-                                        )
-                                    )
-                                }
-                            }
-
-                            val module = MainModule(activity!!, videoItemList)
-                            supportFragmentManager.fragmentFactory = module.fragmentFactory
-                            if (savedInstanceState == null) {
-                                supportFragmentManager.commit {
-                                    replace<VideoPagerFragment>(binding.fragmentContainer.id)
-                                }
-                            }
-                        }
-                            override fun onCancelled(error: DatabaseError) {
-                                TODO("Not yet implemented")
-                            }
-                    })
-                }
-                    override fun onCancelled(error: DatabaseError) {
-                        Toast.makeText(context,"Something went wrong : $error", Toast.LENGTH_LONG).show()
-                    }
-                })
-            }
-        } ?: AuthManager.getInstance().showLogin(this) // Show login screen if user key is null
-
-        setContentView(binding.root)
 //        showBannerAds(binding)
-        binding.animationView.addAnimatorListener(object : Animator.AnimatorListener {
-            override fun onAnimationStart(p0: Animator) {
-                Log.e("TAG", "onAnimationStart: $p0")
-            }
-
-            override fun onAnimationEnd(p0: Animator) {
-                binding.fragmentContainer.visibility = View.VISIBLE
-                binding.animationView.pauseAnimation()
-            }
-
-            override fun onAnimationCancel(p0: Animator) {
-                binding.fragmentContainer.visibility = View.VISIBLE
-                binding.animationView.pauseAnimation()
-            }
-
-            override fun onAnimationRepeat(p0: Animator) {
-                Log.e("TAG", "onAnimationRepeat: $p0")
-            }
-
-        })
-        binding.animationView.playAnimation()
-    }
-
-    private fun getAdsStatus() {
-        val adsEnabled = User.Ads()
-        adsEnabled.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                isAdsEnabled = dataSnapshot.getValue(Boolean::class.java) == true
-                // do something with isEnabled
-                // you can use the isEnabled value here in your loop
-            }
-
-            override fun onCancelled(databaseError: DatabaseError) {
-                Log.e(TAG, "onCancelled: $databaseError")
-                // handle error
-            }
-        })
-    }
-
-    private fun showBannerAds(binding: MainActivityBinding) {
-        //Admob banner
-//        MobileAds.initialize(this)
-//        MobileAds.setRequestConfiguration(RequestConfiguration.Builder()
-//            .setTestDeviceIds(listOf("9AD5A1773917848899AF34A92ACCF1BC")).build())
-//        val adRequest = AdRequest.Builder().build()
-//        binding.adView.loadAd(adRequest)
     }
 
     override fun onAuthSuccess(user: User?) {
         if (User.current() != null && mUser?.name == null) {
             mUser!!.name = getString(R.string.name_placeholder)
-            FirebaseDatabase.getInstance().getReference(Const.kUsersKey)
-                .child(User.currentKey())
-                .child("name")
-                .setValue(getString(R.string.name_placeholder))
+            User.currentKey()?.let {
+                FirebaseDatabase.getInstance().getReference(Const.kUsersKey)
+                    .child(it)
+                    .child("name")
+                    .setValue(getString(R.string.name_placeholder))
+            }
         }
     }
 

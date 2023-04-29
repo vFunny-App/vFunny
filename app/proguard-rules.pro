@@ -19,3 +19,6 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Keep any classes that are used as models
+-keep class vfunny.shortvideovfunnyapp.Login.data.** { *; }
