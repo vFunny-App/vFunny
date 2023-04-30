@@ -99,7 +99,6 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
                     intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
                     startActivity(intent)
                 }
-
             }
         }
         User.currentKey()?.let { currentKey ->
@@ -125,10 +124,9 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
 
                                 // Loop through all the fetched posts
                                 for (postSnapshot in snapshot.children) {
-                                    val postKey = postSnapshot.key
                                     // Convert the post data to a Post object
                                     val post: Post? = postSnapshot.getValue(Post::class.java)
-                                    post?.key = postKey // Add the key to the Post object
+                                    post?.key = postSnapshot.key // Add the key to the Post object
                                     unwatchedPosts.add(post)
                                 }
 
@@ -187,7 +185,7 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
             Toast.makeText(this@MainActivity, "Running ADMIN build", Toast.LENGTH_SHORT).show()
             binding.addBtn.setOnClickListener { addClick() }
             binding.listBtn.setOnClickListener {
-                val intent = Intent(this, ListMainActivity::class.java)
+                val intent = Intent(this, ListActivity::class.java)
                 startActivity(intent)
             }
             binding.updateNotification.setOnClickListener { showUpdateNotificationConfirmationDialog() }

@@ -228,3 +228,52 @@ public class MediaUtils {
         return cursor.getString(columnIndex);
     }
 }
+
+/**
+ * Created on 26/05/2017.
+ * IF WE NEED TO CHANGE THE WHOLE DATABASE
+ */
+
+/*
+ val query2 = FirebaseDatabase.getInstance().reference.child("posts")
+        query2.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                // Get the posts and reverse the order
+                val posts = ArrayList<Post2>()
+
+                // Loop through all the fetched posts
+                for (postSnapshot in snapshot.children) {
+                    // Convert the post data to a Post object
+                    val post: Post2? = postSnapshot.getValue(Post2::class.java)
+                    post?.key = postSnapshot.key
+                    if (post != null) {
+                        posts.add(post)
+                    }
+                }
+                Log.e(TAG, "onDataChange: posts.size ${posts.size}")
+                posts.reverse()
+                // Set the starting timestamp value
+                var timestamp = 1682848556490L
+
+                // Iterate through the posts and add the timestamp field
+                for (post in posts) {
+                    val p = Post()
+                    p.comments = post.comments
+                    p.image = post.image
+                    p.likes = post.likes
+                    p.user = post.user
+                    p.video = post.video
+                    p.timestamp = timestamp
+                    timestamp--
+                    // Update the post in the database with the timestamp field
+                    Log.e(TAG, "onDataChange: ${post.key}", )
+                    val postRef = post.key?.let { query2.child(it) }
+                    postRef?.setValue(p)
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "Failed to retrieve posts: $error")
+            }
+        })
+ */

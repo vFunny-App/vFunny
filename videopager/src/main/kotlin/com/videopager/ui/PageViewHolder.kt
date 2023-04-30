@@ -91,13 +91,12 @@ internal class PageViewHolder(
         val builder = AlertDialog.Builder(context)
         val storage = FirebaseStorage.getInstance()
         val storageReference = FirebaseStorage.getInstance().reference
-        val userId = FirebaseAuth.getInstance().currentUser!!.uid
+        Log.e(TAG, "deleteItem: previewImageUri : ${videoData.previewImageUri}")
+        Log.e(TAG, "deleteItem: mediaUri : ${videoData.mediaUri}")
         val thumbnailRef = storage.getReferenceFromUrl(videoData.previewImageUri)
         val videoRef = storage.getReferenceFromUrl(videoData.mediaUri)
         val dbReference =
             FirebaseDatabase.getInstance().getReference("posts").child(videoData.key!!)
-        Log.e(TAG, "deleteItem: ${videoData.previewImageUri}")
-        Log.e(TAG, "deleteItem: ${videoData.mediaUri}")
         Log.e(TAG, "thumbnailRef: $thumbnailRef")
         Log.e(TAG, "videoRef: $videoRef")
         builder.setCancelable(false)
@@ -115,12 +114,12 @@ internal class PageViewHolder(
                     val thumbnailFileName = thumbnailSegments[1]
                     storageReference.child(thumbnailFolderName).child(thumbnailFileName).delete()
                         .addOnFailureListener { e: java.lang.Exception ->
+                            Log.e(TAG, "deleteItem: thumbnailSegments error : $e", )
                             if (progressDialog.isShowing) {
                                 progressDialog.dismiss()
                             }
                             Toast.makeText(context, "Failed " + e.message, Toast.LENGTH_SHORT)
                                 .show()
-                            Log.e("TAG", "Failed : " + e.message)
                         }
                 }
                 if (videoSegments.size == 2) {
@@ -128,6 +127,7 @@ internal class PageViewHolder(
                     val videoFileName = videoSegments[1]
                     storageReference.child(videoFolderName).child(videoFileName).delete()
                         .addOnFailureListener { e: java.lang.Exception ->
+                            Log.e(TAG, "deleteItem: videoSegments error : $e", )
                             if (progressDialog.isShowing) {
                                 progressDialog.dismiss()
                             }
@@ -136,8 +136,14 @@ internal class PageViewHolder(
                             Log.e("TAG", "Failed : " + e.message)
                         }
                 }
-                dbReference.removeValue()
-                Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show()
+                dbReference.removeValue().addOnSuccessListener {
+                    Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show()
+                }.addOnFailureListener {
+                    Log.e(TAG, "deleteItem: dbReference : $dbReference", )
+                    Log.e(TAG, "deleteItem: dbReference error : $it", )
+                    Toast.makeText(context, "Something went wrong removing post reference", Toast.LENGTH_SHORT)
+                        .show()
+                }
                 if (progressDialog.isShowing) {
                     progressDialog.dismiss()
                 }

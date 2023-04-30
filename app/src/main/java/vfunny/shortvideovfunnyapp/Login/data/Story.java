@@ -4,6 +4,9 @@ import android.util.Log;
 
 import com.firebase.ui.database.SnapshotParser;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ServerValue;
+
+import java.util.Map;
 
 
 /**
@@ -20,14 +23,9 @@ public class Story {
     private String message;
     private Integer likes = 0;
     private Integer comments = 0;
-    public Story() {
-    }
+    private Map<String, String> timestamp;
 
-    public static void uploadImageStory(String image) {
-        Story newStory = new Story();
-        newStory.setUser(User.current().getKey());
-        newStory.setImage(image);
-        Story.uploadStory(newStory);
+    public Story() {
     }
 
     public static void uploadVideoStory(String video, String thumbnail) {
@@ -35,15 +33,15 @@ public class Story {
         newStory.setUser(User.current().getKey());
         newStory.setImage(thumbnail);
         newStory.setVideo(video);
+        newStory.setTimestamp(ServerValue.TIMESTAMP);
         Log.e("TAG", "UPLOADING TO DB");
         Log.e("TAG", "thumbnail: " + thumbnail);
         Log.e("TAG", "video: " + video);
-        Story.uploadStory(newStory);
+        uploadStory(newStory);
     }
 
-    private static void uploadStory(Story story) {
-        FirebaseDatabase.getInstance().getReference(Const.kDataPostKey).push()
-                .setValue(story);
+    private static void uploadStory(final Story story) {
+        FirebaseDatabase.getInstance().getReference(Const.kDataPostKey).push().setValue(story);
     }
 
     public String getUser() {
@@ -100,6 +98,14 @@ public class Story {
 
     public void setLikes(Integer likes) {
         this.likes = likes;
+    }
+
+    public Map<String, String> getTimestamp() {
+        return this.timestamp;
+    }
+
+    public void setTimestamp(final Map<String, String> timestamp) {
+        this.timestamp = timestamp;
     }
 
     public static class StoryReference {

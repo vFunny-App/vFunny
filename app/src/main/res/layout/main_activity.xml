@@ -86,7 +86,8 @@
             android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
             android:layout_margin="10dp"
-            android:text="Send Update \nNotification"
+            android:drawableLeft="@drawable/ic_os_notification_fallback_white_24dp"
+            android:text="Update \nNotification"
             android:textStyle="bold"
             app:cardCornerRadius="30dp" />
     </androidx.cardview.widget.CardView>
