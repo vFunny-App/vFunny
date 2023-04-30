@@ -108,9 +108,12 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
                     override fun onDataChange(dataSnapshot: DataSnapshot) {
                         val postsRef: DatabaseReference =
                             FirebaseDatabase.getInstance().getReference(Const.kDataPostKey)
-                        val unwatchedPostsQuery: Query =
+                        var unwatchedPostsQuery: Query =
                             postsRef.orderByChild("${Const.kWatchedBytKey}/${User.currentKey()}")
                                 .equalTo(null).limitToLast(100)
+                        if (vfunny.shortvideovfunnyapp.BuildConfig.BUILD_TYPE == "admin") {
+                            unwatchedPostsQuery = postsRef.limitToLast(100)
+                        }
                         var count = 0
                         var videoCount = 0
                         Log.e(TAG, "onDataChange: Starting unwatchedPostsQuery ")
@@ -179,13 +182,31 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
             }
         } ?: AuthManager.getInstance().showLogin(this) // Show login screen if user key is null
         setContentView(binding.root)
-        binding.addBtn.setOnClickListener { addClick() }
-        binding.updateNotification.setOnClickListener {
-            showUpdateNotificationConfirmationDialog()
+
+        if (vfunny.shortvideovfunnyapp.BuildConfig.BUILD_TYPE == "admin") {
+            Toast.makeText(this@MainActivity, "Running ADMIN build", Toast.LENGTH_SHORT).show()
+            binding.addBtn.setOnClickListener { addClick() }
+            binding.listBtn.setOnClickListener {
+                val intent = Intent(this, ListMainActivity::class.java)
+                startActivity(intent)
+            }
+            binding.updateNotification.setOnClickListener { showUpdateNotificationConfirmationDialog() }
+            getAdsStatus(binding.adsSwitch)
+        } else if (vfunny.shortvideovfunnyapp.BuildConfig.BUILD_TYPE == "debug") {
+            Toast.makeText(this@MainActivity, "Running DEBUG build", Toast.LENGTH_SHORT).show()
+            hideAdminUI(binding)
+        } else if (vfunny.shortvideovfunnyapp.BuildConfig.BUILD_TYPE == "release") {
+            hideAdminUI(binding)
         }
 //        showBannerAds(binding)
     }
 
+    private fun hideAdminUI(binding: MainActivityBinding) {
+        binding.listBtn.visibility = View.GONE
+        binding.addBtn.visibility = View.GONE
+        binding.updateNotification.visibility = View.GONE
+        binding.addCard.visibility = View.GONE
+    }
 
     private fun showUpdateNotificationConfirmationDialog() {
         MaterialAlertDialogBuilder(this).setTitle("Failed File Names")
@@ -195,7 +216,6 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
             }.setNegativeButton("No") { dialog: DialogInterface, which: Int -> dialog.dismiss() }
             .show()
     }
-
     fun sendUpdateNotification() {
         Thread(Runnable {
             val deviceState = OneSignal.getDeviceState()
