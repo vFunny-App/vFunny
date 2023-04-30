@@ -5,7 +5,7 @@ import com.player.models.PlayerState
 
 // Convenience wrapper for a SavedStateHandle.
 internal class PlayerSavedStateHandle(
-    private val handle: SavedStateHandle
+    private val handle: SavedStateHandle,
 ) {
     fun get(): PlayerState? {
         return handle[KEY_PLAYER_STATE]

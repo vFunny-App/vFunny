@@ -5,7 +5,8 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-internal abstract class MviViewModel<Event, Result, State, Effect>(initialState: State) : ViewModel() {
+internal abstract class MviViewModel<Event, Result, State, Effect>(initialState: State) :
+    ViewModel() {
     val states: StateFlow<State>
     val effects: Flow<Effect>
     private val events = MutableSharedFlow<Event>()

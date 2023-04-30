@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.flow
 
 class FakeAppPlayer(
     private val onPlayerRendering: Flow<Unit>,
-    private val errors: Flow<Throwable>
+    private val errors: Flow<Throwable>,
 ) : AppPlayer {
     override var currentPlayerState: PlayerState = PlayerState.INITIAL
     val setups = mutableListOf<List<VideoData>>()

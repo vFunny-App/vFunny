@@ -11,14 +11,14 @@ import com.videopager.ui.extensions.ViewState
 
 class VideoPagerViewModelFactory(
     private val repository: VideoDataRepository,
-    private val appPlayerFactory: AppPlayer.Factory
+    private val appPlayerFactory: AppPlayer.Factory,
 ) {
     fun create(owner: SavedStateRegistryOwner): ViewModelProvider.Factory {
         return object : AbstractSavedStateViewModelFactory(owner, null) {
             override fun <T : ViewModel> create(
                 key: String,
                 modelClass: Class<T>,
-                handle: SavedStateHandle
+                handle: SavedStateHandle,
             ): T {
                 val playerSavedStateHandle = PlayerSavedStateHandle(handle)
 

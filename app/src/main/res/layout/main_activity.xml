@@ -19,12 +19,23 @@
         android:layout_below="@+id/fragment_container"
         android:orientation="vertical">
 
+        <ProgressBar
+            android:id="@+id/progress_circular"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_marginBottom="48dp"
+            android:progressTint="@android:color/holo_orange_light"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:indeterminate="true"
+            style="@style/Widget.MaterialProgressBar.ProgressBar"
+            app:layout_constraintStart_toStartOf="parent" />
+
         <com.airbnb.lottie.LottieAnimationView
             android:id="@+id/animation_view"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="48dp"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintBottom_toTopOf="@+id/progress_circular"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:lottie_autoPlay="false"
@@ -32,18 +43,76 @@
             app:lottie_rawRes="@raw/welcome_anim"
             app:lottie_speed="2" />
 
-        <ProgressBar
-            android:id="@+id/progress_circular"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="48dp"
-            android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent" />
-
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/listBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentBottom="true"
+        android:layout_margin="@dimen/fui_auth_method_button_margin"
+        android:backgroundTint="#B7B7B7"
+        android:contentDescription="add"
+        android:src="@android:drawable/ic_menu_save" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/addBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_margin="@dimen/fui_auth_method_button_margin"
+        android:backgroundTint="#B7B7B7"
+        android:contentDescription="add"
+        android:src="@android:drawable/ic_input_add" />
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/updateNotification"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/addCard"
+        android:layout_alignStart="@+id/addCard"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="@dimen/fui_auth_method_button_margin"
+        android:layout_marginEnd="@dimen/fui_auth_method_button_margin"
+        android:layout_marginBottom="@dimen/fui_auth_method_button_margin"
+        android:backgroundTint="#B7B7B7"
+        android:clickable="true"
+        app:cardCornerRadius="30dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_margin="10dp"
+            android:drawableLeft="@drawable/ic_os_notification_fallback_white_24dp"
+            android:text="Update \nNotification"
+            android:textStyle="bold"
+            app:cardCornerRadius="30dp" />
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/addCard"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/addBtn"
+        android:layout_alignParentEnd="true"
+        android:layout_margin="@dimen/fui_auth_method_button_margin"
+        app:cardCornerRadius="30dp">
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/adsSwitch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#B7B7B7"
+            android:contentDescription="add"
+            android:padding="10dp"
+            android:src="@android:drawable/ic_input_add"
+            android:text="ads"
+            android:textColor="@color/black" />
+
+    </androidx.cardview.widget.CardView>
     <!--    &lt;!&ndash; view for AdMob Banner Ad &ndash;&gt;-->
     <!--    <com.google.android.gms.ads.AdView-->
     <!--        android:id="@+id/adView"-->

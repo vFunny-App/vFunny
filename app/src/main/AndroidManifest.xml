@@ -3,6 +3,8 @@
     package="vfunny.shortvideovfunnyapp">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
         android:name="com.MyApp"
@@ -13,26 +15,28 @@
         android:screenOrientation="portrait"
         android:supportsRtl="true"
         android:theme="@style/Theme.Exoviewpagerfun">
-
         <activity
             android:name=".Live.ui.MainActivity"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher">
+            android:icon="@mipmap/ic_launcher"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".Live.ui.ListActivity"
+            android:exported="false" />
+
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="@string/APP_ID" />
 
-        <service android:name="com.exo.service.VideoPreLoadingService" />
+        <service android:name="com.exo.service.VideoPreLoadingService"/>
 
         <!-- name doesn't change, value = your class fully name spaced-->
-        <meta-data
-            android:name="com.onesignal.NotificationServiceExtension"
+        <meta-data android:name="com.onesignal.NotificationServiceExtension"
             android:value="vfunny.shortvideovfunnyapp.Notification.NotificationServiceExtension" />
 
     </application>

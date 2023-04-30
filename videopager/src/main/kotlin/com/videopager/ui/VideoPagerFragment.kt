@@ -22,7 +22,7 @@ import kotlinx.coroutines.flow.*
 class VideoPagerFragment(
     private val viewModelFactory: (SavedStateRegistryOwner) -> ViewModelProvider.Factory,
     private val appPlayerViewFactory: AppPlayerView.Factory,
-    private val imageLoader: ImageLoader
+    private val imageLoader: ImageLoader,
 ) : Fragment(R.layout.video_pager_fragment) {
     private val viewModel: VideoPagerViewModel by viewModels { viewModelFactory(this) }
 
@@ -74,7 +74,7 @@ class VideoPagerFragment(
                 when (effect) {
                     is PageEffect -> adapter.renderEffect(binding.viewPager.currentItem, effect)
                     is PlayerErrorEffect -> {
-                        if(effect.throwable.message != null && !effect.throwable.message.equals("Source error")) {
+                        if (effect.throwable.message != null && !effect.throwable.message.equals("Source error")) {
                             Snackbar.make(
                                 binding.root,
                                 effect.throwable.message ?: "Error",

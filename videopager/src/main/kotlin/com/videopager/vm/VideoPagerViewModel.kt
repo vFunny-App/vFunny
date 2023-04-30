@@ -17,7 +17,7 @@ internal class VideoPagerViewModel(
     private val repository: VideoDataRepository,
     private val appPlayerFactory: AppPlayer.Factory,
     private val handle: PlayerSavedStateHandle,
-    initialState: ViewState
+    initialState: ViewState,
 ) : MviViewModel<ViewEvent, ViewResult, ViewState, ViewEffect>(initialState) {
 
     override fun onStart() {
@@ -36,7 +36,7 @@ internal class VideoPagerViewModel(
     }
 
     private fun Flow<LoadVideoDataEvent>.toLoadVideoDataResults(): Flow<ViewResult> {
-        Log.e("TAG", "toPageSettledResults: This Ran 1" )
+        Log.e("TAG", "toPageSettledResults: This Ran 1")
         return flatMapLatest { repository.videoData() }
             .map { videoData ->
                 val appPlayer = states.value.appPlayer
@@ -63,8 +63,8 @@ internal class VideoPagerViewModel(
             // Don't need to create a player when one already exists. This can happen
             // after a configuration change
             states.value.appPlayer != null && event is PlayerLifecycleEvent.Start
-                // Don't tear down the player across configuration changes
-                || event is PlayerLifecycleEvent.Stop && event.isChangingConfigurations
+                    // Don't tear down the player across configuration changes
+                    || event is PlayerLifecycleEvent.Stop && event.isChangingConfigurations
         }.flatMapLatest { event ->
             when (event) {
                 is PlayerLifecycleEvent.Start -> createPlayer()
@@ -79,7 +79,7 @@ internal class VideoPagerViewModel(
     }
 
     private suspend fun createPlayer(): Flow<ViewResult> {
-        Log.e("TAG", "createPlayer:  This Ran 3", )
+        Log.e("TAG", "createPlayer:  This Ran 3")
         check(states.value.appPlayer == null) { "Tried to create a player when one already exists" }
         val config = AppPlayer.Factory.Config(loopVideos = true)
         val appPlayer = appPlayerFactory.create(config)
@@ -118,7 +118,7 @@ internal class VideoPagerViewModel(
 
     private fun Flow<OnPageSettledEvent>.toPageSettledResults(): Flow<ViewResult> {
         return mapLatest { event ->
-            Log.e("TAG", "toPageSettledResults: This Ran 2" )
+            Log.e("TAG", "toPageSettledResults: This Ran 2")
             val appPlayer = requireNotNull(states.value.appPlayer)
             appPlayer.playMediaAt(event.page)
             OnNewPageSettledResult(page = event.page)
@@ -136,7 +136,8 @@ internal class VideoPagerViewModel(
     override fun ViewResult.reduce(state: ViewState): ViewState {
         // MVI reducer boilerplate
         return when (this) {
-            is LoadVideoDataResult -> state.copy(videoData = videoData, page = currentMediaItemIndex)
+            is LoadVideoDataResult -> state.copy(videoData = videoData,
+                page = currentMediaItemIndex)
             is CreatePlayerResult -> state.copy(appPlayer = appPlayer)
             is TearDownPlayerResult -> state.copy(appPlayer = null)
             is OnNewPageSettledResult -> state.copy(page = page, showPlayer = false)
