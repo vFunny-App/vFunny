@@ -165,7 +165,7 @@ internal class PageViewHolder(
                 val notificationContent = JSONObject(
                     "{'included_segments': ['Subscribed Users']," +
                             "'app_id': '$ONESIGNAL_APP_ID'," +
-                            "'headings': {'en': 'Check out this funny video!\uD83D\uDE00\uD83D\uDE05\uD83D\uDE02\uD83E\uDD23'}," +
+                            "'headings': {'en': 'Check out this funny video!\uD83E\uDD23\uD83D\uDE06\uD83D\uDE02\uD83D\uDE05'}," +
                             "'contents': {'en': 'Look at this funny video \uD83D\uDE02. Fresh new memes available!'}," +
                             "'large_icon' : '$thumbnailRef'," +
                             "'big_picture' : '$thumbnailRef'," +
@@ -244,31 +244,36 @@ internal class PageViewHolder(
                     binding.moreOptions
                 )
             }
-            binding.deleteItem.setOnClickListener {
-                deleteItem(videoData)
-            }
-            binding.sendNoti.setOnClickListener {
-                val context = itemView.context
-                val builder = AlertDialog.Builder(context)
-                val storage = FirebaseStorage.getInstance()
-                val thumbnailRef = storage.getReferenceFromUrl(videoData.previewImageUri)
-                val videoRef = storage.getReferenceFromUrl(videoData.mediaUri)
-                Log.e(TAG, "sendNotification: previewImageUri :  ${videoData.previewImageUri}")
-                Log.e(TAG, "sendNotification: mediaUri : ${videoData.mediaUri}")
-                Log.e(TAG, "thumbnailRef: $thumbnailRef")
-                Log.e(TAG, "videoRef: $videoRef")
-                builder.setCancelable(false)
-                builder.setMessage("Do you want to send notification for this item?")
-                    .setPositiveButton("Yes") { dialog, id ->
-                        // Launch the coroutine to perform the network operation
-                        sendVideoNotification(videoData.previewImageUri, videoData.mediaUri)
-                    }.setNegativeButton("No") { dialog, id ->
-                        // User cancelled the dialog
-                        Toast.makeText(context, "Cancelled", Toast.LENGTH_SHORT).show()
-                    }
-                builder.create().show()
-            }
 
+            if (com.videopager.BuildConfig.BUILD_TYPE == "admin") {
+                binding.deleteItem.setOnClickListener {
+                    deleteItem(videoData)
+                }
+                binding.sendNoti.setOnClickListener {
+                    val context = itemView.context
+                    val builder = AlertDialog.Builder(context)
+                    val storage = FirebaseStorage.getInstance()
+                    val thumbnailRef = storage.getReferenceFromUrl(videoData.previewImageUri)
+                    val videoRef = storage.getReferenceFromUrl(videoData.mediaUri)
+                    Log.e(TAG, "sendNotification: previewImageUri :  ${videoData.previewImageUri}")
+                    Log.e(TAG, "sendNotification: mediaUri : ${videoData.mediaUri}")
+                    Log.e(TAG, "thumbnailRef: $thumbnailRef")
+                    Log.e(TAG, "videoRef: $videoRef")
+                    builder.setCancelable(false)
+                    builder.setMessage("Do you want to send notification for this item?")
+                        .setPositiveButton("Yes") { dialog, id ->
+                            // Launch the coroutine to perform the network operation
+                            sendVideoNotification(videoData.previewImageUri, videoData.mediaUri)
+                        }.setNegativeButton("No") { dialog, id ->
+                            // User cancelled the dialog
+                            Toast.makeText(context, "Cancelled", Toast.LENGTH_SHORT).show()
+                        }
+                    builder.create().show()
+                }
+            } else {
+                binding.deleteItem.visibility = View.GONE
+                binding.sendNoti.visibility = View.GONE
+            }
             ConstraintSet().apply {
                 clone(binding.root)
                 val ratio = videoData.aspectRatio?.let { "$it:1" }
