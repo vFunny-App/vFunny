@@ -4,6 +4,20 @@
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <TextView
+        android:id="@+id/date_tv"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:background="#A4000000"
+        android:textColor="@color/white"
+        android:shadowColor="@android:color/holo_orange_light"
+        android:shadowDx="1"
+        android:shadowDy="1"
+        android:textAlignment="center"
+        android:textSize="20sp"
+        android:shadowRadius="1"/>
+
     <com.google.android.exoplayer2.ui.PlayerView
         android:id="@+id/item_player_view"
         android:layout_width="match_parent"

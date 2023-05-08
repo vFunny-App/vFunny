@@ -245,7 +245,7 @@ internal class PageViewHolder(
                 )
             }
 
-            if (com.videopager.BuildConfig.BUILD_TYPE == "admin") {
+            if (com.videopager.BuildConfig.BUILD_TYPE == "admin" || com.videopager.BuildConfig.BUILD_TYPE == "adminDebug") {
                 binding.deleteItem.setOnClickListener {
                     deleteItem(videoData)
                 }

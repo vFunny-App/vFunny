@@ -23,7 +23,7 @@ public class Story {
     private String message;
     private Integer likes = 0;
     private Integer comments = 0;
-    private Map<String, String> timestamp;
+    private Long timestamp;
 
     public Story() {
     }
@@ -33,7 +33,7 @@ public class Story {
         newStory.setUser(User.current().getKey());
         newStory.setImage(thumbnail);
         newStory.setVideo(video);
-        newStory.setTimestamp(ServerValue.TIMESTAMP);
+        newStory.setTimestamp(-1 * System.currentTimeMillis());
         Log.e("TAG", "UPLOADING TO DB");
         Log.e("TAG", "thumbnail: " + thumbnail);
         Log.e("TAG", "video: " + video);
@@ -100,11 +100,11 @@ public class Story {
         this.likes = likes;
     }
 
-    public Map<String, String> getTimestamp() {
+    public Long getTimestamp() {
         return this.timestamp;
     }
 
-    public void setTimestamp(final Map<String, String> timestamp) {
+    public void setTimestamp(final Long timestamp) {
         this.timestamp = timestamp;
     }
 

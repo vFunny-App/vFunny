@@ -74,7 +74,6 @@ class VideoPreLoadingService :
                         Log.d(TAG, " download complete : videoUri: $videoUri")
                     }
                 }
-
                 cachingJob = GlobalScope.launch(Dispatchers.IO) {
                 cacheVideo(dataSpec, progressListener)
                 preCacheVideo(videosList)
@@ -103,4 +102,5 @@ class VideoPreLoadingService :
         cachingJob?.cancel()
         stopSelf()
     }
+
 }

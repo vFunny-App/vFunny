@@ -1,12 +1,15 @@
 package vfunny.shortvideovfunnyapp.Live.ui
 
+import android.Manifest.permission.POST_NOTIFICATIONS
 import android.animation.Animator
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -14,6 +17,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.commit
 import androidx.fragment.app.replace
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -47,6 +51,7 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
     val videoItemList = ArrayList<VideoData>()
 
     companion object {
+        const val POST_NOTIFICATIONS_REQ_CODE = 103
         const val ONESIGNAL_APP_ID = "0695d934-66e2-43f6-9853-dbedd55b86ca"
         const val REST_API_KEY = "MzBhMWIzODMtY2U3OC00OTlhLTkwMDEtM2UxZWExYjU5Nzg5"
         const val ADS_TYPE = "ads"
@@ -110,7 +115,7 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
                         var unwatchedPostsQuery: Query =
                             postsRef.orderByChild("${Const.kWatchedBytKey}/${User.currentKey()}")
                                 .equalTo(null).limitToLast(100)
-                        if (vfunny.shortvideovfunnyapp.BuildConfig.BUILD_TYPE == "admin") {
+                        if (vfunny.shortvideovfunnyapp.BuildConfig.BUILD_TYPE == "admin" || com.videopager.BuildConfig.BUILD_TYPE == "adminDebug") {
                             unwatchedPostsQuery = postsRef.limitToLast(100)
                         }
                         var count = 0
@@ -181,7 +186,7 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
         } ?: AuthManager.getInstance().showLogin(this) // Show login screen if user key is null
         setContentView(binding.root)
 
-        if (vfunny.shortvideovfunnyapp.BuildConfig.BUILD_TYPE == "admin") {
+        if (vfunny.shortvideovfunnyapp.BuildConfig.BUILD_TYPE == "admin" || com.videopager.BuildConfig.BUILD_TYPE == "adminDebug") {
             Toast.makeText(this@MainActivity, "Running ADMIN build", Toast.LENGTH_SHORT).show()
             binding.addBtn.setOnClickListener { addClick() }
             binding.listBtn.setOnClickListener {
@@ -196,7 +201,14 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
         } else if (vfunny.shortvideovfunnyapp.BuildConfig.BUILD_TYPE == "release") {
             hideAdminUI(binding)
         }
-//        showBannerAds(binding)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            when (PackageManager.PERMISSION_GRANTED) {
+                ContextCompat.checkSelfPermission(this@MainActivity, POST_NOTIFICATIONS) -> {}
+                else -> {
+                    requestPermissions(arrayOf(POST_NOTIFICATIONS), POST_NOTIFICATIONS_REQ_CODE)
+                }
+            }
+        }
     }
 
     private fun hideAdminUI(binding: MainActivityBinding) {
@@ -207,14 +219,16 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
     }
 
     private fun showUpdateNotificationConfirmationDialog() {
-        MaterialAlertDialogBuilder(this).setTitle("Failed File Names")
-            .setMessage("Send Update notification to users?")
-            .setPositiveButton("COPY TO CLIPBOARD") { dialog: DialogInterface?, which: Int ->
+        MaterialAlertDialogBuilder(this).setTitle("Send Update Notification?")
+            .setMessage("Send Update notification to old version users?")
+            .setPositiveButton("SEND") { dialog: DialogInterface?, which: Int ->
                 sendUpdateNotification()
-            }.setNegativeButton("No") { dialog: DialogInterface, which: Int -> dialog.dismiss() }
+            }
+            .setNegativeButton("CANCEL") { dialog: DialogInterface, which: Int -> dialog.dismiss() }
             .show()
     }
-    fun sendUpdateNotification() {
+
+    private fun sendUpdateNotification() {
         Thread(Runnable {
             val deviceState = OneSignal.getDeviceState()
             val userId = deviceState?.userId
@@ -364,6 +378,38 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
                     }
                     Log.e(TAG, "onActivityResult: $filePath")
                 }
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>, grantResults: IntArray,
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            POST_NOTIFICATIONS_REQ_CODE,
+            -> {
+                // If request is cancelled, the result arrays are empty.
+                if ((grantResults.isNotEmpty() &&
+                            grantResults[0] == PackageManager.PERMISSION_GRANTED)
+                ) {
+                    // Permission is granted. Continue the action or workflow
+                    // in your app.
+                } else {
+                    // Explain to the user that the feature is unavailable because
+                    // the feature requires a permission that the user has denied.
+                    // At the same time, respect the user's decision. Don't link to
+                    // system settings in an effort to convince the user to change
+                    // their decision.
+                }
+                return
+            }
+
+            // Add other 'when' lines to check for other
+            // permissions this app might request.
+            else -> {
+                // Ignore all other requests.
             }
         }
     }

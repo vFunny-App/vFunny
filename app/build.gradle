@@ -24,14 +24,17 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             initWith debug
         }
+        adminDebug {
+            initWith debug
+        }
     }
 
     defaultConfig {
         applicationId 'vfunny.shortvideovfunnyapp'
         minSdkVersion 21
         targetSdkVersion 33
-        versionCode 17
-        versionName "7.0.1"
+        versionCode 18
+        versionName "7.0.2"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
