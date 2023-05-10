@@ -9,6 +9,8 @@ object Const {
      * Change this values to set another firebase key path.
      * Must be a non-empty string and not contain '.' '#' '$' '[' or ']'
      */
+    const val kLanguageKey = "language"
+    const val kCreatedOnKey = "createdOn"
     const val kAdsKey = "isAdsEnabled"
     const val kUsersKey = "users"
     const val kFollowersKey = "followers"
@@ -19,4 +21,9 @@ object Const {
     const val kChatsKey = "chats"
     const val kMessagesKey = "messages"
     const val kTopicsFeed = "topic"
+
+    const val kDataPostWorldwideKey = "posts_ww"
+    const val kDataPostEnglishKey = "posts_en"
+    const val kDataPostHindiKey = "posts_hi"
+    const val kDataPostOtherKey = "posts_ot"
 }

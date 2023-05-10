@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import kotlin.jvm.JvmStatic;
+import vfunny.shortvideovfunnyapp.Login.data.Language;
 import vfunny.shortvideovfunnyapp.Login.data.User;
 import vfunny.shortvideovfunnyapp.R;
 
@@ -44,6 +46,7 @@ public class AuthManager implements FirebaseAuth.AuthStateListener {
         return _shared;
     }
 
+
     public void showLogin(Activity activity) {
         // Check if user is signed in (non-null) and update UI accordingly.
         FirebaseAuth auth = FirebaseAuth.getInstance();
@@ -51,17 +54,17 @@ public class AuthManager implements FirebaseAuth.AuthStateListener {
         if (auth.getCurrentUser() != null) {
             // subscribe for new notifications
             FirebaseMessaging.getInstance().subscribeToTopic(kTopicsFeed + User.currentKey());
-            final String locale = activity.getApplicationContext().getResources().getConfiguration().locale.getLanguage();
+            String locale = activity.getApplicationContext().getResources().getConfiguration().locale.getLanguage();
             User.current().child("lang").setValue(locale); // update lang configuration
         } else {
-            final List providers = Arrays.asList(
+            List providers = Arrays.asList(
                     new AuthUI.IdpConfig.EmailBuilder().build(),
                     new AuthUI.IdpConfig.GoogleBuilder().build(),
                     new AuthUI.IdpConfig.PhoneBuilder().setDefaultCountryIso("IN").build()
             );
 
-            final String eula = activity.getString(R.string.eula);
-            final String privacy = activity.getString(R.string.privacy_policy);
+            String eula = activity.getString(R.string.eula);
+            String privacy = activity.getString(R.string.privacy_policy);
 
             // show sign-in dialog
             Intent intent = AuthUI.getInstance()
@@ -76,9 +79,9 @@ public class AuthManager implements FirebaseAuth.AuthStateListener {
         }
     }
 
-    public void completeAuth(final Context context) {
-        final FirebaseUser fbuser = FirebaseAuth.getInstance().getCurrentUser();
-        final DatabaseReference ref = FirebaseDatabase.getInstance().getReference("users").child(fbuser.getUid());
+    public void completeAuth(Context context) {
+        FirebaseUser fbuser = FirebaseAuth.getInstance().getCurrentUser();
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("users").child(fbuser.getUid());
         // subscribe for new notifications
         FirebaseMessaging.getInstance().subscribeToTopic(kTopicsFeed + User.currentKey());
         ref.addListenerForSingleValueEvent(new ValueEventListener() {

@@ -1,5 +1,6 @@
 package vfunny.shortvideovfunnyapp.Login.data
 
+import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 
@@ -11,10 +12,14 @@ class User {
     var id: String? = null
     var name: String? = null
     var photo: String? = null
-    var bio: String? = null
+    var language: List<Language> = Language.getAllLanguages()
+
 
     companion object {
-        fun Ads(): DatabaseReference {
+
+        private val TAG: String = "User"
+
+        fun adsDatabaseReference(): DatabaseReference {
             return FirebaseDatabase.getInstance().getReference(Const.kAdsKey)
         }
 
@@ -81,6 +86,11 @@ class User {
         private fun seencollection(userId: String): DatabaseReference {
             return FirebaseDatabase.getInstance().getReference(Const.kUsersKey).child(userId)
                 .child("seen")
+        }
+
+        private fun getLanguage(userId: String): DatabaseReference {
+            return FirebaseDatabase.getInstance().getReference(Const.kUsersKey).child(userId)
+                .child("language")
         }
 
         fun updatePhoto(image: String?) {

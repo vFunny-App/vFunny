@@ -22,19 +22,26 @@ import androidx.fragment.app.commit
 import androidx.fragment.app.replace
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.FirebaseApp
-import com.google.firebase.database.*
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
 import com.onesignal.OneSignal
 import com.player.models.VideoData
-import com.squareup.okhttp.*
 import com.videopager.ui.VideoPagerFragment
+import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONException
 import org.json.JSONObject
 import vfunny.shortvideovfunnyapp.BuildConfig.APPLICATION_ID
+import vfunny.shortvideovfunnyapp.BuildConfig.BUILD_TYPE
 import vfunny.shortvideovfunnyapp.Live.di.MainModule
 import vfunny.shortvideovfunnyapp.Login.Loginutils.AuthManager
+import vfunny.shortvideovfunnyapp.Login.PostsUtils.PostsManager
 import vfunny.shortvideovfunnyapp.Login.data.Const
-import vfunny.shortvideovfunnyapp.Login.data.Post
+import vfunny.shortvideovfunnyapp.Login.data.Language
 import vfunny.shortvideovfunnyapp.Login.data.User
 import vfunny.shortvideovfunnyapp.R
 import vfunny.shortvideovfunnyapp.databinding.MainActivityBinding
@@ -110,71 +117,62 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
             User.collection(currentKey).run {
                 addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(dataSnapshot: DataSnapshot) {
-                        val postsRef: DatabaseReference =
-                            FirebaseDatabase.getInstance().getReference(Const.kDataPostKey)
-                        var unwatchedPostsQuery: Query =
-                            postsRef.orderByChild("${Const.kWatchedBytKey}/${User.currentKey()}")
-                                .equalTo(null).limitToLast(100)
-                        if (vfunny.shortvideovfunnyapp.BuildConfig.BUILD_TYPE == "admin" || com.videopager.BuildConfig.BUILD_TYPE == "adminDebug") {
-                            unwatchedPostsQuery = postsRef.limitToLast(100)
+                        if (User.currentKey() == null) {
+                            return
+                        }
+                        var languageList = Language.getAllLanguages()
+                        if(!dataSnapshot.exists()) {
+                            Log.e(TAG, "user not in database", )
+                            AuthManager.getInstance().completeAuth(this@MainActivity)
+                        } else {
+                            val user : User? = dataSnapshot.getValue(User::class.java)
+                            languageList  = user?.language ?: Language.getAllLanguages()
+                            if(user?.language != null && !languageList.contains(Language.WORLDWIDE)) {
+                                languageList = Language.addWorldWideLangToDb(this@MainActivity, user.language)
+                            }
                         }
                         var count = 0
                         var videoCount = 0
-                        Log.e(TAG, "onDataChange: Starting unwatchedPostsQuery ")
-                        unwatchedPostsQuery.addListenerForSingleValueEvent(object :
-                            ValueEventListener {
-                            override fun onDataChange(snapshot: DataSnapshot) {
-                                Log.e(TAG, "onDataChange: response from unwatchedPostsQuery ")
-                                val unwatchedPosts: MutableList<Post?> = ArrayList()
+                        val unwatchedPosts = if (BUILD_TYPE == "admin" || BUILD_TYPE == "adminDebug") {
+                            Log.e(TAG, "Getting ADMIN POSTS")
+                            PostsManager.instance.getAdminPosts(this@MainActivity, Language.getAllLanguages())
+                        } else {
+                            Log.e(TAG, "Getting USER POSTS")
+                            PostsManager.instance.getPosts(this@MainActivity, languageList)
+                        }
 
-                                // Loop through all the fetched posts
-                                for (postSnapshot in snapshot.children) {
-                                    // Convert the post data to a Post object
-                                    val post: Post? = postSnapshot.getValue(Post::class.java)
-                                    post?.key = postSnapshot.key // Add the key to the Post object
-                                    unwatchedPosts.add(post)
-                                }
-
-                                // Pass the list of unwatched posts to your application
-                                unwatchedPosts.reversed().forEach {
-                                    val video: String = it?.video ?: ""
-                                    val image: String = it?.image ?: ""
-                                    val key: String? = it?.key
-                                    count++
-                                    videoCount++
-                                    videoItemList.add(VideoData(count.toString(),
-                                        video,
-                                        image,
-                                        key = key))
-                                    val totalItemCount = ITEM_COUNT_THRESHOLD
-                                    if (isAdsEnabled && videoCount % ADS_FREQUENCY == 0 && videoCount != totalItemCount) {
-                                        count++
-                                        videoItemList.add(VideoData(count.toString(),
-                                            "",
-                                            "",
-                                            type = ADS_TYPE))
-                                    }
-                                }
-
-
-                                val module = MainModule(activity!!, videoItemList)
-                                supportFragmentManager.fragmentFactory = module.fragmentFactory
-                                if (savedInstanceState == null) {
-                                    supportFragmentManager.commit {
-                                        replace<VideoPagerFragment>(binding.fragmentContainer.id)
-                                    }
-                                }
-                                binding.animationView.clearAnimation()
-                                binding.fragmentContainer.visibility = View.VISIBLE
-                                binding.loadingLyt.removeAllViewsInLayout()
+                        Log.e(TAG, "onDataChange: unwatchedPosts.size ${unwatchedPosts.size}", )
+                        // Pass the list of unwatched posts to your application
+                        unwatchedPosts.forEach {
+                            val video: String = it?.video ?: ""
+                            val image: String = it?.image ?: ""
+                            val key: String? = it?.key
+                            count++
+                            videoCount++
+                            videoItemList.add(VideoData(count.toString(),
+                                video,
+                                image,
+                                key = key))
+                            val totalItemCount = ITEM_COUNT_THRESHOLD
+                            if (isAdsEnabled && videoCount % ADS_FREQUENCY == 0 && videoCount != totalItemCount) {
+                                count++
+                                videoItemList.add(VideoData(count.toString(),
+                                    "",
+                                    "",
+                                    type = ADS_TYPE))
                             }
-
-                            override fun onCancelled(error: DatabaseError) {
-                                Toast.makeText(context,
-                                    "Something went wrong : $error",
-                                    Toast.LENGTH_LONG).show()
+                        }
+                        Log.e(TAG, "onDataChange: FINAL videoItemList.size ${videoItemList.size}", )
+                        val module = MainModule(activity!!, videoItemList)
+                        supportFragmentManager.fragmentFactory = module.fragmentFactory
+                        if (savedInstanceState == null) {
+                            supportFragmentManager.commit {
+                                replace<VideoPagerFragment>(binding.fragmentContainer.id)
                             }
-                        })
+                        }
+                        binding.animationView.clearAnimation()
+                        binding.fragmentContainer.visibility = View.VISIBLE
+                        binding.loadingLyt.removeAllViewsInLayout()
                     }
 
                     override fun onCancelled(error: DatabaseError) {
@@ -236,21 +234,21 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
             if (!isSubscribed) return@Runnable
             try {
                 val notificationContent =
-                    JSONObject("{'included_segments': ['toBeUpdatedUsers']," + "'app_id': '$ONESIGNAL_APP_ID'," + "'headings': {'en': 'update Available'}," + "'contents': {'en': 'A new version of the app is available. Tap here to update.'}," + "'data': {'app_update_notification': 'true'}}")
+                    JSONObject("{'included_segments': ['toBeUpdatedUsers'],'app_id': '$ONESIGNAL_APP_ID','headings': {'en': 'update Available'},'contents': {'en': 'A new version of the app is available. Tap here to update.'},'data': {'app_update_notification': 'true'}}")
 
                 val client = OkHttpClient()
-                val json = MediaType.parse("application/json; charset=utf-8")
-                val body = RequestBody.create(json, notificationContent.toString())
+                val json = "application/json; charset=utf-8".toMediaTypeOrNull()
+                val body = notificationContent.toString().toRequestBody(json)
 
                 val request = Request.Builder().url("https://onesignal.com/api/v1/notifications")
                     .addHeader("Authorization", "Basic $REST_API_KEY").post(body).build()
 
                 client.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(request: Request?, e: IOException?) {
+                    override fun onFailure(call: Call, e: IOException) {
                         Log.e(TAG, "onFailure: $e")
                     }
 
-                    override fun onResponse(response: Response?) {
+                    override fun onResponse(call: Call, response: Response) {
                         Log.e(TAG, "onResponse: $response")
                     }
                 })
@@ -283,7 +281,7 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
     }
 
     private fun getAdsStatus(adsSwitch: SwitchCompat) {
-        val adsEnabled = User.Ads()
+        val adsEnabled = User.adsDatabaseReference()
         adsEnabled.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 isAdsEnabled = dataSnapshot.getValue(Boolean::class.java) == true
