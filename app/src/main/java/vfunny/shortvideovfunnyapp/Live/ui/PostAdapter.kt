@@ -25,7 +25,7 @@ import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
-import vfunny.shortvideovfunnyapp.Data.model.Post
+import vfunny.shortvideovfunnyapp.Post.model.Post
 import vfunny.shortvideovfunnyapp.R
 import java.text.SimpleDateFormat
 import java.util.*

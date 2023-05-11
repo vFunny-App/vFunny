@@ -7,7 +7,7 @@ import coil.ImageLoader
 import coil.load
 import coil.size.Precision
 import coil.size.Scale
-import vfunny.shortvideovfunnyapp.Data.model.Post
+import vfunny.shortvideovfunnyapp.Post.model.Post
 import vfunny.shortvideovfunnyapp.R
 
 class PostViewHolder(itemView: View, imageLoader: ImageLoader) : RecyclerView.ViewHolder(itemView) {

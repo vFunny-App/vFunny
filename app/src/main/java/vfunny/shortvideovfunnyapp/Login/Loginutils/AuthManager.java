@@ -1,6 +1,6 @@
 package vfunny.shortvideovfunnyapp.Login.Loginutils;
 
-import static vfunny.shortvideovfunnyapp.Data.model.Const.kTopicsFeed;
+import static vfunny.shortvideovfunnyapp.Post.model.Const.kTopicsFeed;
 
 import android.app.Activity;
 import android.content.Context;

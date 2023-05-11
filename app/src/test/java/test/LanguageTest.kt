@@ -1,7 +1,7 @@
 package test
 
 import org.junit.Test
-import vfunny.shortvideovfunnyapp.Data.model.Language.Companion.getAllLanguages
+import vfunny.shortvideovfunnyapp.Post.model.Language.Companion.getAllLanguages
 
 internal class LanguageTest {
 

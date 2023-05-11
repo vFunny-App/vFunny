@@ -22,4 +22,5 @@
 
 # Keep any classes that are used as models
 -keep class vfunny.shortvideovfunnyapp.Login.model.** { *; }
--keep class vfunny.shortvideovfunnyapp.Data.model.** { *; }
+-keep class vfunny.shortvideovfunnyapp.Post.model.** { *; }
+-keep class vfunny.shortvideovfunnyapp.Lang.model.** { *; }

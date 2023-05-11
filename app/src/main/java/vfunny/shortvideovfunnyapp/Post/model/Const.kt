@@ -1,4 +1,4 @@
-package vfunny.shortvideovfunnyapp.Data.model
+package vfunny.shortvideovfunnyapp.Post.model
 
 /**
  * Created on 06/07/2019.
