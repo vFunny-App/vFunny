@@ -71,7 +71,9 @@ class PostAdapter(
             val dateTextView = dialogView.findViewById<TextView>(R.id.date_tv)
             mData[position].timestamp?.let {
                 try {
-                    dateTextView.text = "Time : ${simpleDateFormat.format(0 - it)}"
+                    if(it is Long) {
+                        dateTextView.text = "Time : ${simpleDateFormat.format(0 - it)}"
+                    }
                 } catch (e: Exception) {
                     Toast.makeText(context, "Error getting date $e", Toast.LENGTH_SHORT).show()
                 }

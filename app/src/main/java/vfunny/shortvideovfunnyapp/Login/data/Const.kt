@@ -10,7 +10,7 @@ object Const {
      * Must be a non-empty string and not contain '.' '#' '$' '[' or ']'
      */
     const val kLanguageKey = "language"
-    const val kCreatedOnKey = "createdOn"
+    const val kTimestampKey = "timestamp"
     const val kAdsKey = "isAdsEnabled"
     const val kUsersKey = "users"
     const val kFollowersKey = "followers"

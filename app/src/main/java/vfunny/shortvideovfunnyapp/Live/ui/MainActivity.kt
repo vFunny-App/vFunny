@@ -20,6 +20,7 @@ import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.commit
 import androidx.fragment.app.replace
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.DataSnapshot
@@ -30,6 +31,7 @@ import com.google.firebase.storage.FirebaseStorage
 import com.onesignal.OneSignal
 import com.player.models.VideoData
 import com.videopager.ui.VideoPagerFragment
+import kotlinx.coroutines.launch
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -120,6 +122,7 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
                         if (User.currentKey() == null) {
                             return
                         }
+                        Log.e(TAG, "User.currentKey() : ${User.currentKey()}", )
                         var languageList = Language.getAllLanguages()
                         if(!dataSnapshot.exists()) {
                             Log.e(TAG, "user not in database", )
@@ -127,52 +130,54 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
                         } else {
                             val user : User? = dataSnapshot.getValue(User::class.java)
                             languageList  = user?.language ?: Language.getAllLanguages()
-                            if(user?.language != null && !languageList.contains(Language.WORLDWIDE)) {
-                                languageList = Language.addWorldWideLangToDb(this@MainActivity, user.language)
+                            if(!languageList.contains(Language.WORLDWIDE)) {
+                                Log.e(TAG, "user doesn't have ww language", )
+                                if (user != null) {
+                                    user.id = User.currentKey()
+                                    languageList = Language.addWorldWideLangToDb(this@MainActivity, user)
+                                }
                             }
                         }
-                        var count = 0
-                        var videoCount = 0
-                        val unwatchedPosts = if (BUILD_TYPE == "admin" || BUILD_TYPE == "adminDebug") {
-                            Log.e(TAG, "Getting ADMIN POSTS")
-                            PostsManager.instance.getAdminPosts(this@MainActivity, Language.getAllLanguages())
-                        } else {
-                            Log.e(TAG, "Getting USER POSTS")
-                            PostsManager.instance.getPosts(this@MainActivity, languageList)
-                        }
-
-                        Log.e(TAG, "onDataChange: unwatchedPosts.size ${unwatchedPosts.size}", )
-                        // Pass the list of unwatched posts to your application
-                        unwatchedPosts.forEach {
-                            val video: String = it?.video ?: ""
-                            val image: String = it?.image ?: ""
-                            val key: String? = it?.key
-                            count++
-                            videoCount++
-                            videoItemList.add(VideoData(count.toString(),
-                                video,
-                                image,
-                                key = key))
-                            val totalItemCount = ITEM_COUNT_THRESHOLD
-                            if (isAdsEnabled && videoCount % ADS_FREQUENCY == 0 && videoCount != totalItemCount) {
+                        Log.e(TAG, "user languageList size : ${languageList.size}", )
+                        Log.e(TAG, "Getting POSTS")
+                        lifecycleScope.launch {
+                            val unwatchedPosts = PostsManager.instance.getPosts(this@MainActivity, languageList)
+                            var count = 0
+                            var videoCount = 0
+                            // Do something with the posts
+                            Log.d(TAG, "onDataChange: unwatchedPosts.size ${unwatchedPosts.size}", )
+                            // Pass the list of unwatched posts to your application
+                            unwatchedPosts.forEach {
+                                val video: String = it?.video ?: ""
+                                val image: String = it?.image ?: ""
+                                val key: String? = it?.key
                                 count++
+                                videoCount++
                                 videoItemList.add(VideoData(count.toString(),
-                                    "",
-                                    "",
-                                    type = ADS_TYPE))
+                                    video,
+                                    image,
+                                    key = key))
+                                val totalItemCount = ITEM_COUNT_THRESHOLD
+                                if (isAdsEnabled && videoCount % ADS_FREQUENCY == 0 && videoCount != totalItemCount) {
+                                    count++
+                                    videoItemList.add(VideoData(count.toString(),
+                                        "",
+                                        "",
+                                        type = ADS_TYPE))
+                                }
                             }
-                        }
-                        Log.e(TAG, "onDataChange: FINAL videoItemList.size ${videoItemList.size}", )
-                        val module = MainModule(activity!!, videoItemList)
-                        supportFragmentManager.fragmentFactory = module.fragmentFactory
-                        if (savedInstanceState == null) {
-                            supportFragmentManager.commit {
-                                replace<VideoPagerFragment>(binding.fragmentContainer.id)
+                            Log.d(TAG, "onDataChange: FINAL videoItemList.size ${videoItemList.size}", )
+                            val module = MainModule(activity!!, videoItemList)
+                            supportFragmentManager.fragmentFactory = module.fragmentFactory
+                            if (savedInstanceState == null) {
+                                supportFragmentManager.commit {
+                                    replace<VideoPagerFragment>(binding.fragmentContainer.id)
+                                }
                             }
+                            binding.animationView.clearAnimation()
+                            binding.fragmentContainer.visibility = View.VISIBLE
+                            binding.loadingLyt.removeAllViewsInLayout()
                         }
-                        binding.animationView.clearAnimation()
-                        binding.fragmentContainer.visibility = View.VISIBLE
-                        binding.loadingLyt.removeAllViewsInLayout()
                     }
 
                     override fun onCancelled(error: DatabaseError) {
