@@ -31,6 +31,7 @@ import com.onesignal.OneSignal
 import com.player.models.VideoData
 import com.player.ui.AppPlayerView
 import com.squareup.okhttp.*
+import com.videopager.BuildConfig.BUILD_TYPE
 import com.videopager.R
 import com.videopager.databinding.PageItemBinding
 import com.videopager.models.AnimationEffect
@@ -114,7 +115,7 @@ internal class PageViewHolder(
                     val thumbnailFileName = thumbnailSegments[1]
                     storageReference.child(thumbnailFolderName).child(thumbnailFileName).delete()
                         .addOnFailureListener { e: java.lang.Exception ->
-                            Log.e(TAG, "deleteItem: thumbnailSegments error : $e", )
+                            Log.e(TAG, "deleteItem: thumbnailSegments error : $e")
                             if (progressDialog.isShowing) {
                                 progressDialog.dismiss()
                             }
@@ -127,7 +128,7 @@ internal class PageViewHolder(
                     val videoFileName = videoSegments[1]
                     storageReference.child(videoFolderName).child(videoFileName).delete()
                         .addOnFailureListener { e: java.lang.Exception ->
-                            Log.e(TAG, "deleteItem: videoSegments error : $e", )
+                            Log.e(TAG, "deleteItem: videoSegments error : $e")
                             if (progressDialog.isShowing) {
                                 progressDialog.dismiss()
                             }
@@ -139,8 +140,8 @@ internal class PageViewHolder(
                 dbReference.removeValue().addOnSuccessListener {
                     Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show()
                 }.addOnFailureListener {
-                    Log.e(TAG, "deleteItem: dbReference : $dbReference", )
-                    Log.e(TAG, "deleteItem: dbReference error : $it", )
+                    Log.e(TAG, "deleteItem: dbReference : $dbReference")
+                    Log.e(TAG, "deleteItem: dbReference error : $it")
                     Toast.makeText(context, "Something went wrong removing post reference", Toast.LENGTH_SHORT)
                         .show()
                 }
@@ -245,7 +246,7 @@ internal class PageViewHolder(
                 )
             }
 
-            if (com.videopager.BuildConfig.BUILD_TYPE == "admin" || com.videopager.BuildConfig.BUILD_TYPE == "adminDebug") {
+            if (BUILD_TYPE == "admin" || BUILD_TYPE == "adminDebug") {
                 binding.deleteItem.setOnClickListener {
                     deleteItem(videoData)
                 }

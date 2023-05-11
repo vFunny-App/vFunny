@@ -1,9 +1,10 @@
-package vfunny.shortvideovfunnyapp.Login.data
+package vfunny.shortvideovfunnyapp.Data.model
 
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import com.google.firebase.database.FirebaseDatabase
+import vfunny.shortvideovfunnyapp.Login.model.User
 
 enum class Language(code: String) {
     WORLDWIDE("ww"), ENGLISH("en"), HINDI("hi"), OTHERS("ot");

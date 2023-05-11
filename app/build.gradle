@@ -48,7 +48,6 @@ android {
 }
 
 dependencies {
-    implementation project(path: ':player')
     implementation project(":player")
     implementation project(":videopager")
     implementation project(":exo")

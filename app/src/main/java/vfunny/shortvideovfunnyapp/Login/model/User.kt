@@ -1,8 +1,9 @@
-package vfunny.shortvideovfunnyapp.Login.data
+package vfunny.shortvideovfunnyapp.Login.model
 
-import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
+import vfunny.shortvideovfunnyapp.Data.model.Const
+import vfunny.shortvideovfunnyapp.Data.model.Language
 
 /**
  * Created on 02/05/2019.

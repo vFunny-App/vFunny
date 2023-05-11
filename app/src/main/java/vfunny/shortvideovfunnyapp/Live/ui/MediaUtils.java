@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import vfunny.shortvideovfunnyapp.Login.data.Story;
+import vfunny.shortvideovfunnyapp.Data.model.Story;
 
 /**
  * Created on 26/05/2017.

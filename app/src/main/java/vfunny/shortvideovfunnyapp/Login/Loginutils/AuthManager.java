@@ -1,6 +1,6 @@
 package vfunny.shortvideovfunnyapp.Login.Loginutils;
 
-import static vfunny.shortvideovfunnyapp.Login.data.Const.kTopicsFeed;
+import static vfunny.shortvideovfunnyapp.Data.model.Const.kTopicsFeed;
 
 import android.app.Activity;
 import android.content.Context;
@@ -24,9 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import kotlin.jvm.JvmStatic;
-import vfunny.shortvideovfunnyapp.Login.data.Language;
-import vfunny.shortvideovfunnyapp.Login.data.User;
+import vfunny.shortvideovfunnyapp.Login.model.User;
 import vfunny.shortvideovfunnyapp.R;
 
 /**

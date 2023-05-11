@@ -1,4 +1,4 @@
-package vfunny.shortvideovfunnyapp.Login.data
+package vfunny.shortvideovfunnyapp.Data.model
 
 /**
  * Created on 06/07/2019.

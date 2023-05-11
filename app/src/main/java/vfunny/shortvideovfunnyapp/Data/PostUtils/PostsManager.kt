@@ -1,4 +1,4 @@
-package vfunny.shortvideovfunnyapp.Login.PostsUtils
+package vfunny.shortvideovfunnyapp.Data.PostUtils
 
 import android.content.Context
 import android.util.Log
@@ -10,10 +10,10 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import vfunny.shortvideovfunnyapp.BuildConfig.BUILD_TYPE
-import vfunny.shortvideovfunnyapp.Login.data.Const
-import vfunny.shortvideovfunnyapp.Login.data.Language
-import vfunny.shortvideovfunnyapp.Login.data.Post
-import vfunny.shortvideovfunnyapp.Login.data.User
+import vfunny.shortvideovfunnyapp.Data.model.Const
+import vfunny.shortvideovfunnyapp.Data.model.Language
+import vfunny.shortvideovfunnyapp.Data.model.Post
+import vfunny.shortvideovfunnyapp.Login.model.User
 
 /**
  * Created by shresthasaurabh86@gmail.com 09/05/2023.

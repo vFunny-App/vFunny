@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import coil.imageLoader
 import com.google.firebase.database.*
-import vfunny.shortvideovfunnyapp.Login.data.Post
+import vfunny.shortvideovfunnyapp.Data.model.Post
 import vfunny.shortvideovfunnyapp.databinding.ListActivityBinding
 
 

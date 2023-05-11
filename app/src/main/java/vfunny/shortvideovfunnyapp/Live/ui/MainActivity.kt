@@ -39,12 +39,12 @@ import org.json.JSONException
 import org.json.JSONObject
 import vfunny.shortvideovfunnyapp.BuildConfig.APPLICATION_ID
 import vfunny.shortvideovfunnyapp.BuildConfig.BUILD_TYPE
+import vfunny.shortvideovfunnyapp.Data.PostUtils.PostsManager
+import vfunny.shortvideovfunnyapp.Data.model.Const
+import vfunny.shortvideovfunnyapp.Data.model.Language
 import vfunny.shortvideovfunnyapp.Live.di.MainModule
 import vfunny.shortvideovfunnyapp.Login.Loginutils.AuthManager
-import vfunny.shortvideovfunnyapp.Login.PostsUtils.PostsManager
-import vfunny.shortvideovfunnyapp.Login.data.Const
-import vfunny.shortvideovfunnyapp.Login.data.Language
-import vfunny.shortvideovfunnyapp.Login.data.User
+import vfunny.shortvideovfunnyapp.Login.model.User
 import vfunny.shortvideovfunnyapp.R
 import vfunny.shortvideovfunnyapp.databinding.MainActivityBinding
 import java.io.IOException
@@ -122,35 +122,35 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
                         if (User.currentKey() == null) {
                             return
                         }
-                        Log.e(TAG, "User.currentKey() : ${User.currentKey()}", )
+                        Log.e(TAG, "User.currentKey() : ${User.currentKey()}")
                         var languageList = Language.getAllLanguages()
-                        if(!dataSnapshot.exists()) {
-                            Log.e(TAG, "user not in database", )
+                        if (!dataSnapshot.exists()) {
+                            Log.e(TAG, "user not in database")
                             AuthManager.getInstance().completeAuth(this@MainActivity)
                         } else {
-                            val user : User? = dataSnapshot.getValue(User::class.java)
-                            languageList  = user?.language ?: Language.getAllLanguages()
-                            if(!languageList.contains(Language.WORLDWIDE)) {
-                                Log.e(TAG, "user doesn't have ww language", )
+                            val user: User? = dataSnapshot.getValue(User::class.java)
+                            languageList = user?.language ?: Language.getAllLanguages()
+                            if (!languageList.contains(Language.WORLDWIDE)) {
+                                Log.e(TAG, "user doesn't have ww language")
                                 if (user != null) {
                                     user.id = User.currentKey()
                                     languageList = Language.addWorldWideLangToDb(this@MainActivity, user)
                                 }
                             }
                         }
-                        Log.e(TAG, "user languageList size : ${languageList.size}", )
+                        Log.e(TAG, "user languageList size : ${languageList.size}")
                         Log.e(TAG, "Getting POSTS")
                         lifecycleScope.launch {
                             val unwatchedPosts = PostsManager.instance.getPosts(this@MainActivity, languageList)
                             var count = 0
                             var videoCount = 0
                             // Do something with the posts
-                            Log.d(TAG, "onDataChange: unwatchedPosts.size ${unwatchedPosts.size}", )
+                            Log.d(TAG, "onDataChange: unwatchedPosts.size ${unwatchedPosts.size}")
                             // Pass the list of unwatched posts to your application
                             unwatchedPosts.forEach {
-                                val video: String = it?.video ?: ""
-                                val image: String = it?.image ?: ""
-                                val key: String? = it?.key
+                                val video: String = it.video ?: ""
+                                val image: String = it.image ?: ""
+                                val key: String? = it.key
                                 count++
                                 videoCount++
                                 videoItemList.add(VideoData(count.toString(),
@@ -166,7 +166,7 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
                                         type = ADS_TYPE))
                                 }
                             }
-                            Log.d(TAG, "onDataChange: FINAL videoItemList.size ${videoItemList.size}", )
+                            Log.d(TAG, "onDataChange: FINAL videoItemList.size ${videoItemList.size}")
                             val module = MainModule(activity!!, videoItemList)
                             supportFragmentManager.fragmentFactory = module.fragmentFactory
                             if (savedInstanceState == null) {
@@ -189,7 +189,7 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
         } ?: AuthManager.getInstance().showLogin(this) // Show login screen if user key is null
         setContentView(binding.root)
 
-        if (vfunny.shortvideovfunnyapp.BuildConfig.BUILD_TYPE == "admin" || com.videopager.BuildConfig.BUILD_TYPE == "adminDebug") {
+        if (BUILD_TYPE == "admin" || BUILD_TYPE == "adminDebug") {
             Toast.makeText(this@MainActivity, "Running ADMIN build", Toast.LENGTH_SHORT).show()
             binding.addBtn.setOnClickListener { addClick() }
             binding.listBtn.setOnClickListener {
@@ -198,10 +198,10 @@ class MainActivity : AppCompatActivity(), AuthManager.AuthListener {
             }
             binding.updateNotification.setOnClickListener { showUpdateNotificationConfirmationDialog() }
             getAdsStatus(binding.adsSwitch)
-        } else if (vfunny.shortvideovfunnyapp.BuildConfig.BUILD_TYPE == "debug") {
+        } else if (BUILD_TYPE == "debug") {
             Toast.makeText(this@MainActivity, "Running DEBUG build", Toast.LENGTH_SHORT).show()
             hideAdminUI(binding)
-        } else if (vfunny.shortvideovfunnyapp.BuildConfig.BUILD_TYPE == "release") {
+        } else if (BUILD_TYPE == "release") {
             hideAdminUI(binding)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

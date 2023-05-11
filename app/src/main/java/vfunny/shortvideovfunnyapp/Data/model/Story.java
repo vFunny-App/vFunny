@@ -1,12 +1,11 @@
-package vfunny.shortvideovfunnyapp.Login.data;
+package vfunny.shortvideovfunnyapp.Data.model;
 
 import android.util.Log;
 
 import com.firebase.ui.database.SnapshotParser;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ServerValue;
 
-import java.util.Map;
+import vfunny.shortvideovfunnyapp.Login.model.User;
 
 
 /**

@@ -1,6 +1,4 @@
-package vfunny.shortvideovfunnyapp.Login.data
-
-import com.google.firebase.Timestamp
+package vfunny.shortvideovfunnyapp.Data.model
 
 /**
  * Created on 02/05/2019.

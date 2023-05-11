@@ -21,4 +21,5 @@
 #-renamesourcefileattribute SourceFile
 
 # Keep any classes that are used as models
--keep class vfunny.shortvideovfunnyapp.Login.data.** { *; }
+-keep class vfunny.shortvideovfunnyapp.Login.model.** { *; }
+-keep class vfunny.shortvideovfunnyapp.Data.model.** { *; }
