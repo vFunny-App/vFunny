@@ -74,7 +74,6 @@ class PostsManager {
                 .toObjects(Post::class.java)
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching USER posts for language $langKey", e)
-            Toast.makeText(context, "Error fetching posts for language $langKey", Toast.LENGTH_SHORT).show()
             emptyList()
         }
     }

@@ -15,6 +15,8 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.videopager.ui.VideoPagerFragment
+import vfunny.shortvideovfunnyapp.Live.ui.list.ListActivity
+import vfunny.shortvideovfunnyapp.Live.ui.migrate.MigrateListActivity
 import vfunny.shortvideovfunnyapp.Post.model.Const
 import vfunny.shortvideovfunnyapp.Login.Loginutils.AuthManager
 import vfunny.shortvideovfunnyapp.Login.model.User
@@ -128,6 +130,10 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
         }
         binding.listBtn.setOnClickListener {
             val intent = Intent(this, ListActivity::class.java)
+            startActivity(intent)
+        }
+        binding.migratelistBtn.setOnClickListener {
+            val intent = Intent(this, MigrateListActivity::class.java)
             startActivity(intent)
         }
         binding.updateNotification.setOnClickListener { showUpdateNotificationConfirmationDialog() }

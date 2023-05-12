@@ -26,7 +26,11 @@
         </activity>
 
         <activity
-            android:name=".Live.ui.ListActivity"
+            android:name=".Live.ui.list.ListActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".Live.ui.migrate.MigrateListActivity"
             android:exported="false" />
 
         <meta-data

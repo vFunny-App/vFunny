@@ -8,6 +8,7 @@ class Post {
     var image: String? = null
     var video: String? = null
     var key: String? = null
+    var migrate: Boolean? = null
     var timestamp: Any? = null
 
     override fun equals(other: Any?): Boolean {
@@ -19,4 +20,7 @@ class Post {
         return false
     }
 
+    override fun toString(): String {
+        return "Post(image=$image, video=$video, key=$key, migrate=$migrate, timestamp=$timestamp)"
+    }
 }

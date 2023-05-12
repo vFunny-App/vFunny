@@ -1,4 +1,4 @@
-package vfunny.shortvideovfunnyapp.Live.ui
+package vfunny.shortvideovfunnyapp.Live.ui.migrate
 
 import android.app.ProgressDialog
 import android.content.Context
@@ -30,13 +30,13 @@ import vfunny.shortvideovfunnyapp.R
 import java.text.SimpleDateFormat
 import java.util.*
 
-class PostAdapter(
+class MigratePostAdapter(
     var context: Context,
     private val imageLoader: ImageLoader,
     private val itemWidth: Int,
     private val mData: ArrayList<Post>
 ) :
-    RecyclerView.Adapter<PostAdapter.PostViewHolder>() {
+    RecyclerView.Adapter<MigratePostAdapter.MigratePostViewHolder>() {
 
     companion object {
         private val simpleDateFormat = SimpleDateFormat("dd MMMM yyyy, HH:mm:ss", Locale.ENGLISH)
@@ -46,14 +46,14 @@ class PostAdapter(
     override fun onCreateViewHolder(
         viewGroup: ViewGroup,
         i: Int,
-    ): PostViewHolder {
+    ): MigratePostViewHolder {
         val view =
-            LayoutInflater.from(viewGroup.context).inflate(R.layout.item_list, viewGroup, false)
-        return PostViewHolder(view, imageLoader)
+            LayoutInflater.from(viewGroup.context).inflate(R.layout.migrate_item_list, viewGroup, false)
+        return MigratePostViewHolder(view, imageLoader)
     }
 
 
-    override fun onBindViewHolder(holder: PostViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: MigratePostViewHolder, position: Int) {
         Log.e(TAG, "onBindViewHolder: position $position == ${mData[position].timestamp}")
         Log.e(TAG, "onBindViewHolder: $position == ${mData[position].image}")
         holder.setItem(mData[position])
@@ -211,7 +211,7 @@ class PostAdapter(
     }
 
 
-    inner class PostViewHolder(itemView: View, imageLoader: ImageLoader) :
+    inner class MigratePostViewHolder(itemView: View, imageLoader: ImageLoader) :
         RecyclerView.ViewHolder(itemView) {
         var previewImage: ImageView
         var imageLoader: ImageLoader

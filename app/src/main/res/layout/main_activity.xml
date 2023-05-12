@@ -46,15 +46,37 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/migratelistBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/listBtn"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="@dimen/fui_auth_method_button_margin"
+        android:layout_marginTop="@dimen/fui_auth_method_button_margin"
+        android:layout_marginEnd="@dimen/fui_auth_method_button_margin"
+        android:backgroundTint="#B7B7B7"
+        android:contentDescription="add"
+        app:maxImageSize="40dp"
+        app:backgroundTint="@color/app_color"
+        app:tint="@android:color/black"
+        android:src="@android:drawable/ic_menu_directions" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/listBtn"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_alignParentStart="true"
         android:layout_alignParentBottom="true"
-        android:layout_margin="@dimen/fui_auth_method_button_margin"
+        android:layout_marginStart="@dimen/fui_auth_method_button_margin"
+        android:layout_marginTop="@dimen/fui_auth_method_button_margin"
+        android:layout_marginEnd="@dimen/fui_auth_method_button_margin"
+        android:layout_marginBottom="@dimen/fui_auth_method_button_margin"
         android:backgroundTint="#B7B7B7"
         android:contentDescription="add"
-        android:src="@android:drawable/ic_menu_save" />
+        app:maxImageSize="40dp"
+        app:backgroundTint="@color/app_color"
+        app:tint="@android:color/black"
+        android:src="?android:attr/actionModeFindDrawable" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/addBtn"
