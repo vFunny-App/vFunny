@@ -26,7 +26,6 @@ import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import vfunny.shortvideovfunnyapp.Post.model.Language
 import vfunny.shortvideovfunnyapp.Post.model.Post
@@ -49,7 +48,7 @@ class MigratePostAdapter(
     RecyclerView.Adapter<MigratePostAdapter.MigratePostViewHolder>() {
 
     companion object {
-        private val simpleDateFormat = SimpleDateFormat("dd MMMM yyyy, HH:mm:ss", Locale.ENGLISH)
+        private val simpleDateFormat = SimpleDateFormat("d/M/yy h:mm a", Locale.ENGLISH)
         private const val TAG: String = "LISTING"
     }
 
@@ -159,7 +158,7 @@ class MigratePostAdapter(
         builder.setMessage("Are you sure you want to set Language to ${item.name}?")
             .setCancelable(false)
             .setPositiveButton("Yes") { dialog, _ ->
-                migratePostFromRtdbToFirestore(context, post, item, adapterPostion);
+                migratePostToLang(context, post, item, adapterPostion);
                 dialog.dismiss()
                 dialogInterface.dismiss()
             }
@@ -173,20 +172,20 @@ class MigratePostAdapter(
 
 
     /**
-    * * It gets references to the RTDB and Firestore posts.
+    * * It gets references to the RTDB and RTDB posts.
     * *  It creates a ProgressDialog to show during the migration process.
-    * * It adds the post data to the Firestore collection using the add method. This returns a Task object that can be used to listen for success or failure events.
+    * * It adds the post data to the RTDB collection using the add method. This returns a Task object that can be used to listen for success or failure events.
     * * On success, it updates the "migrated" field in the RTDB post using the updateChildren method. This also returns a Task object that can be used to listen for success or failure events.
     * * On success of updating the RTDB post, it dismisses the progress dialog and shows a success message.
     * * On failure at any step, it dismisses the progress dialog and shows an error message.
     */
-    private fun migratePostFromRtdbToFirestore(context: Context, post: Post, language: Language, adapterPostion: Int) {
-        // Get references to the RTDB and Firestore posts
+    private fun migratePostToLang(context: Context, post: Post, language: Language, adapterPostion: Int) {
+        // Get references to the ORIGINAL RTDB and NEW LANGUAGE RTDB posts
         Log.e(TAG, "post: $post", )
         Log.e(TAG, "language: $language", )
         Log.e(TAG, "adapterPostion: $adapterPostion", )
         val rtdbPostRef = post.key?.let { FirebaseDatabase.getInstance().reference.child("posts").child(it) }
-        val firestorePostRef = FirebaseFirestore.getInstance().collection("posts_${language.code}")
+        val firestorePostRef = FirebaseDatabase.getInstance().reference.child("posts_${language.code}")
 
         // Create a progress dialog to show during the migration process
         val progressDialog = ProgressDialog(context)
@@ -204,7 +203,7 @@ class MigratePostAdapter(
             post2.timestamp = System.currentTimeMillis()
         }
         Log.e(TAG, "migratePostFromRtdbToFirestore: $post2", )
-        firestorePostRef.add(post2)
+        firestorePostRef.setValue(post2)
             .addOnSuccessListener {
                 Log.e(TAG, "migratePostFromRtdbToFirestore: $it", )
                 // On success, update the "migrated" field in the RTDB post and remove the post from the adapter

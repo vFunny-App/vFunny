@@ -19,7 +19,7 @@ class MyFirebaseTest {
     private lateinit var context: Context
 
     companion object {
-        private val simpleDateFormat = SimpleDateFormat("dd MMMM yyyy, HH:mm:ss", Locale.ENGLISH)
+        private val simpleDateFormat = SimpleDateFormat("d/M/yy h:mm a", Locale.ENGLISH)
         private const val TAG: String = "LanguageTest"
     }
 

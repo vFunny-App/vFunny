@@ -90,6 +90,7 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
     }
 
     override fun hideAdminUI() {
+        binding.migratelistBtn.visibility = View.GONE
         binding.listBtn.visibility = View.GONE
         binding.addBtn.visibility = View.GONE
         binding.updateNotification.visibility = View.GONE

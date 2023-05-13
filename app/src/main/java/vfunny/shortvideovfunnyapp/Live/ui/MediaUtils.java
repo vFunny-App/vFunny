@@ -31,8 +31,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import vfunny.shortvideovfunnyapp.Post.PostUtils.PostsManager;
 import vfunny.shortvideovfunnyapp.Post.model.Language;
-import vfunny.shortvideovfunnyapp.Post.model.Post;
 
 /**
  * Created on 26/05/2017.
@@ -83,7 +83,7 @@ public class MediaUtils {
                     progressDialog.dismiss();
                 }
                 taskSnapshot.getMetadata().getReference().getDownloadUrl().addOnCompleteListener(videoUri -> {
-                    createThumbnailUploadTask(filePath, context).addOnSuccessListener(thumbnailSnapshot -> thumbnailSnapshot.getMetadata().getReference().getDownloadUrl().addOnCompleteListener(thumbnailUri -> Post.uploadVideoStory(videoUri.getResult().toString(), thumbnailUri.getResult().toString(), language)));
+                    createThumbnailUploadTask(filePath, context).addOnSuccessListener(thumbnailSnapshot -> thumbnailSnapshot.getMetadata().getReference().getDownloadUrl().addOnCompleteListener(thumbnailUri -> PostsManager.getInstance().uploadPost(videoUri.getResult().toString(), thumbnailUri.getResult().toString(), language)));
                 });
                 Toast.makeText(context, "Uploaded", Toast.LENGTH_SHORT).show();
             }).addOnFailureListener(e -> {
@@ -120,7 +120,7 @@ public class MediaUtils {
                         progressDialog.dismiss();
                     }
                     taskSnapshot.getMetadata().getReference().getDownloadUrl().addOnCompleteListener(videoUri -> {
-                        createThumbnailUploadTask(filePath, context).addOnSuccessListener(thumbnailSnapshot -> thumbnailSnapshot.getMetadata().getReference().getDownloadUrl().addOnCompleteListener(thumbnailUri -> Post.uploadVideoStory(videoUri.getResult().toString(), thumbnailUri.getResult().toString(), language)));
+                        createThumbnailUploadTask(filePath, context).addOnSuccessListener(thumbnailSnapshot -> thumbnailSnapshot.getMetadata().getReference().getDownloadUrl().addOnCompleteListener(thumbnailUri -> PostsManager.getInstance().uploadPost(videoUri.getResult().toString(), thumbnailUri.getResult().toString(), language)));
                     });
                     Toast.makeText(context, "Uploaded file " + (finalI + 1) + " of " + itemCount, Toast.LENGTH_SHORT).show();
                     Log.e("TAG", "uploadMultiplePhoto: uploadedCount" + uploadedCount.get());

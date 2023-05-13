@@ -30,6 +30,7 @@ import org.json.JSONException
 import org.json.JSONObject
 import vfunny.shortvideovfunnyapp.BuildConfig.APPLICATION_ID
 import vfunny.shortvideovfunnyapp.BuildConfig.BUILD_TYPE
+import vfunny.shortvideovfunnyapp.LangUtils.LangManager
 import vfunny.shortvideovfunnyapp.Live.di.MainModule
 import vfunny.shortvideovfunnyapp.Login.Loginutils.AuthManager
 import vfunny.shortvideovfunnyapp.Login.model.User
@@ -166,27 +167,29 @@ abstract class BaseActivity : AppCompatActivity() {
                             if (user != null) {
                                 user.id = User.currentKey()
                                 languageList =
-                                    Language.addWorldWideLangToDb(this@BaseActivity, user)
+                                    LangManager.instance.addWorldWideLangToDb(this@BaseActivity,
+                                        user)
                             }
                         }
                     }
                     Log.e(TAG, "user languageList size : ${languageList.size}")
                     Log.e(TAG, "Getting POSTS")
                     lifecycleScope.launch {
-                        val unwatchedPosts =
-                            PostsManager.instance.getPosts(this@BaseActivity, languageList)
+                        val unwatchedPosts = PostsManager.instance.getPosts(languageList)
                         var count = 0
                         var videoCount = 0
                         // Do something with the posts
                         Log.d(TAG, "onDataChange: unwatchedPosts.size ${unwatchedPosts.size}")
                         // Pass the list of unwatched posts to your application
                         unwatchedPosts.forEach {
-                            val video: String = it.video ?: ""
-                            val image: String = it.image ?: ""
-                            val key: String? = it.key
                             count++
                             videoCount++
-                            videoItemList.add(VideoData(count.toString(), video, image, key = key))
+                            videoItemList.add(VideoData(count.toString(),
+                                it.video ?: "",
+                                it.image ?: "",
+                                key = it.key,
+                                language = it.language,
+                                timestamp = it.timestamp))
                             val totalItemCount = ITEM_COUNT_THRESHOLD
                             if (isAdsEnabled && videoCount % ADS_FREQUENCY == 0 && videoCount != totalItemCount) {
                                 count++
@@ -284,9 +287,8 @@ abstract class BaseActivity : AppCompatActivity() {
         language: Language,
     ) {
         val builder = AlertDialog.Builder(this@BaseActivity)
-        builder.setMessage("Are you sure you want to upload ${data.clipData?.itemCount?:1} file(s) as ${language.name}?")
-            .setCancelable(false)
-            .setPositiveButton("Yes") { dialog, _ ->
+        builder.setMessage("Are you sure you want to upload ${data.clipData?.itemCount ?: 1} file(s) as ${language.name}?")
+            .setCancelable(false).setPositiveButton("Yes") { dialog, _ ->
                 if (data.clipData != null) {
                     val uriList = ArrayList<Uri>()
                     for (i in 0 until data.clipData!!.itemCount) {
@@ -296,26 +298,19 @@ abstract class BaseActivity : AppCompatActivity() {
                         }
                     }
                     if (uriList.isNotEmpty()) {
-                        MediaUtils.uploadMultiplePhoto(
-                            uriList,
-                            language,
-                            this@BaseActivity)
+                        MediaUtils.uploadMultiplePhoto(uriList, language, this@BaseActivity)
                     }
                 } else {
                     val filePath = data.data
                     Log.e(TAG, "onActivityResult: describeContents ${filePath?.scheme}")
                     data.data?.run {
-                        MediaUtils.uploadPhoto(
-                            this,
-                            language,
-                            this@BaseActivity)
+                        MediaUtils.uploadPhoto(this, language, this@BaseActivity)
                     }
                     Log.e(TAG, "onActivityResult: $filePath")
                 }
                 dialog.dismiss()
                 dialogInterface.dismiss()
-            }
-            .setNegativeButton("BACK") { dialog, _ ->
+            }.setNegativeButton("BACK") { dialog, _ ->
                 // Dismiss the dialog
                 dialog.dismiss()
             }
