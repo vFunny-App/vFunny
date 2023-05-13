@@ -43,7 +43,7 @@ open class ListActivity : AppCompatActivity() {
                         posts.add(post)
                     }
                 }
-                posts.reversed()
+                posts.reverse()
                 windowManager.defaultDisplay.getMetrics(displayMetrics)
                 val screenWidth = displayMetrics.widthPixels
                 val itemWidth = screenWidth / 4

@@ -96,6 +96,9 @@ internal class PageViewHolder(
         Log.e(TAG, "deleteItem: mediaUri : ${videoData.mediaUri}")
         val thumbnailRef = storage.getReferenceFromUrl(videoData.previewImageUri)
         val videoRef = storage.getReferenceFromUrl(videoData.mediaUri)
+        if(videoData.key == null){
+            Toast.makeText(context, "New Delete Method Needed For Firestore", Toast.LENGTH_SHORT).show()
+        }
         val dbReference =
             FirebaseDatabase.getInstance().getReference("posts").child(videoData.key!!)
         Log.e(TAG, "thumbnailRef: $thumbnailRef")

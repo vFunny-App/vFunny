@@ -6,13 +6,17 @@ import android.widget.Toast
 import com.google.firebase.database.FirebaseDatabase
 import vfunny.shortvideovfunnyapp.Login.model.User
 
-enum class Language(code: String) {
+enum class Language(val code: String) {
     WORLDWIDE("ww"), ENGLISH("en"), HINDI("hi"), OTHERS("ot");
 
     companion object {
         private const val TAG = "Language"
         fun getAllLanguages(): List<Language> {
             return enumValues<Language>().toList()
+        }
+
+        fun getAllLanguagesString(): Array<String> {
+            return enumValues<Language>().map { it.code }.toTypedArray()
         }
 
         fun addWorldWideLangToDb(
