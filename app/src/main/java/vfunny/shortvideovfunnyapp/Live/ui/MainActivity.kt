@@ -161,6 +161,4 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
     override fun onAuthFailed() {
         AuthManager.getInstance().showLogin(this)
     }
-
-
 }

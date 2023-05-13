@@ -11,6 +11,7 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
@@ -19,7 +20,6 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import com.google.firebase.storage.FirebaseStorage
 import com.onesignal.OneSignal
 import com.player.models.VideoData
 import kotlinx.coroutines.launch
@@ -28,13 +28,13 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONException
 import org.json.JSONObject
-import vfunny.shortvideovfunnyapp.BuildConfig.BUILD_TYPE
 import vfunny.shortvideovfunnyapp.BuildConfig.APPLICATION_ID
-import vfunny.shortvideovfunnyapp.Post.PostUtils.PostsManager
-import vfunny.shortvideovfunnyapp.Post.model.Language
+import vfunny.shortvideovfunnyapp.BuildConfig.BUILD_TYPE
 import vfunny.shortvideovfunnyapp.Live.di.MainModule
 import vfunny.shortvideovfunnyapp.Login.Loginutils.AuthManager
 import vfunny.shortvideovfunnyapp.Login.model.User
+import vfunny.shortvideovfunnyapp.Post.PostUtils.PostsManager
+import vfunny.shortvideovfunnyapp.Post.model.Language
 import java.io.IOException
 
 abstract class BaseActivity : AppCompatActivity() {
@@ -134,7 +134,8 @@ abstract class BaseActivity : AppCompatActivity() {
     fun checkBuild() {
         when (BUILD_TYPE) {
             "admin", "adminDebug" -> {
-                Toast.makeText(this@BaseActivity, "Running $BUILD_TYPE build", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@BaseActivity, "Running $BUILD_TYPE build", Toast.LENGTH_SHORT)
+                    .show()
                 addAdminButtons()
                 getAdsStatus()
             }
@@ -261,11 +262,31 @@ abstract class BaseActivity : AppCompatActivity() {
                 // error
                 finish() // close the app
             }
-        } else if (requestCode == MediaUtils.REQUEST_VIDEO_PICK) {
-            super.onActivityResult(requestCode, resultCode, data)
-            val storage = FirebaseStorage.getInstance()
-            val storageReference = storage.reference
-            if (data != null) {
+        } else if (requestCode == MediaUtils.REQUEST_VIDEO_PICK && data != null && resultCode == RESULT_OK) {
+            val langList = Language.getAllLanguages()
+            val listItems = langList.map { it.name }.toTypedArray()
+            val mBuilder = AlertDialog.Builder(this@BaseActivity)
+            mBuilder.setTitle("Choose a language")
+            mBuilder.setSingleChoiceItems(listItems, -1) { dialogInterface, i ->
+                showUploadVideoConfirmationDialog(data, dialogInterface, langList[i])
+            }
+            mBuilder.setNeutralButton("Cancel") { dialog, _ ->
+                dialog.cancel()
+            }
+            val mDialog = mBuilder.create()
+            mDialog.show()
+        }
+    }
+
+    private fun showUploadVideoConfirmationDialog(
+        data: Intent,
+        dialogInterface: DialogInterface,
+        language: Language,
+    ) {
+        val builder = AlertDialog.Builder(this@BaseActivity)
+        builder.setMessage("Are you sure you want to upload ${data.clipData?.itemCount?:1} file(s) as ${language.name}?")
+            .setCancelable(false)
+            .setPositiveButton("Yes") { dialog, _ ->
                 if (data.clipData != null) {
                     val uriList = ArrayList<Uri>()
                     for (i in 0 until data.clipData!!.itemCount) {
@@ -275,29 +296,31 @@ abstract class BaseActivity : AppCompatActivity() {
                         }
                     }
                     if (uriList.isNotEmpty()) {
-                        MediaUtils.uploadMultiplePhoto(storageReference,
+                        MediaUtils.uploadMultiplePhoto(
                             uriList,
-                            this@BaseActivity,
-                            MediaUtils.REQUEST_VIDEO_PICK)
+                            language,
+                            this@BaseActivity)
                     }
                 } else {
-                    super.onActivityResult(requestCode, resultCode, data)
-                    val storage = FirebaseStorage.getInstance()
-                    val storageReference = storage.reference
                     val filePath = data.data
                     Log.e(TAG, "onActivityResult: describeContents ${filePath?.scheme}")
                     data.data?.run {
-                        if (resultCode == RESULT_OK) {
-                            MediaUtils.uploadPhoto(storageReference,
-                                this,
-                                this@BaseActivity,
-                                MediaUtils.REQUEST_VIDEO_PICK)
-                        }
+                        MediaUtils.uploadPhoto(
+                            this,
+                            language,
+                            this@BaseActivity)
                     }
                     Log.e(TAG, "onActivityResult: $filePath")
                 }
+                dialog.dismiss()
+                dialogInterface.dismiss()
             }
-        }
+            .setNegativeButton("BACK") { dialog, _ ->
+                // Dismiss the dialog
+                dialog.dismiss()
+            }
+        val alert = builder.create()
+        alert.show()
     }
 
 }

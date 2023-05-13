@@ -213,6 +213,7 @@ class MigratePostAdapter(
                         Log.e(TAG, "migratePostFromRtdbToFirestore: $it", )
                         // On success, dismiss the progress dialog and show a success message
                         progressDialog.dismiss()
+                        mData.removeAt(adapterPostion)
                         notifyItemRemoved(adapterPostion)
                         Toast.makeText(context, "Post migrated successfully!", Toast.LENGTH_SHORT).show()
                     }

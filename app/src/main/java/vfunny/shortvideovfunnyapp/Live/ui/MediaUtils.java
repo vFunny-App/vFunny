@@ -31,7 +31,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import vfunny.shortvideovfunnyapp.Post.model.Story;
+import vfunny.shortvideovfunnyapp.Post.model.Language;
+import vfunny.shortvideovfunnyapp.Post.model.Post;
 
 /**
  * Created on 26/05/2017.
@@ -40,10 +41,8 @@ import vfunny.shortvideovfunnyapp.Post.model.Story;
 
 public class MediaUtils {
 
-    private static final int REQUEST_CODE = 1001;
-    public static final int REQUEST_VIDEO_PICK = REQUEST_CODE + 6;
-
-    private static final int PERMISSIONS_REQUEST_STORAGE = 10;
+    public static final int REQUEST_VIDEO_PICK = 1001;
+    private static final int PERMISSIONS_REQUEST_STORAGE = 1002;
 
     public static boolean storagePermissionGrant(Activity activity) {
         if (ContextCompat.checkSelfPermission(activity, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
@@ -70,8 +69,7 @@ public class MediaUtils {
         }
     }
 
-
-    public static void uploadPhoto(StorageReference storageReference, Uri filePath, Context context, int requestCode) {
+    public static void uploadPhoto(Uri filePath, Language language, Context context) {
         if (filePath != null) {
             final ProgressDialog progressDialog = new ProgressDialog(context);
             progressDialog.setTitle("Uploading...");
@@ -79,15 +77,13 @@ public class MediaUtils {
             final String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
             Log.e("TAG", "uploadPhoto: userId : " + userId);
             Log.e("TAG", "uploadPhoto: filePath : " + filePath);
-            StorageReference ref = storageReference.child(userId + "/av" + System.currentTimeMillis());
+            StorageReference ref = FirebaseStorage.getInstance().getReference().child(userId + "/av" + System.currentTimeMillis());
             ref.putFile(filePath).addOnSuccessListener(taskSnapshot -> {
                 if (progressDialog.isShowing()) {
                     progressDialog.dismiss();
                 }
-                taskSnapshot.getMetadata().getReference().getDownloadUrl().addOnCompleteListener(uri -> {
-                    if (requestCode == REQUEST_VIDEO_PICK) {
-                        createThumbnailUploadTask(filePath, context).addOnSuccessListener(thumbnailSnapshot -> thumbnailSnapshot.getMetadata().getReference().getDownloadUrl().addOnCompleteListener(thumbnailUri -> Story.uploadVideoStory(uri.getResult().toString(), thumbnailUri.getResult().toString())));
-                    }
+                taskSnapshot.getMetadata().getReference().getDownloadUrl().addOnCompleteListener(videoUri -> {
+                    createThumbnailUploadTask(filePath, context).addOnSuccessListener(thumbnailSnapshot -> thumbnailSnapshot.getMetadata().getReference().getDownloadUrl().addOnCompleteListener(thumbnailUri -> Post.uploadVideoStory(videoUri.getResult().toString(), thumbnailUri.getResult().toString(), language)));
                 });
                 Toast.makeText(context, "Uploaded", Toast.LENGTH_SHORT).show();
             }).addOnFailureListener(e -> {
@@ -103,7 +99,7 @@ public class MediaUtils {
         }
     }
 
-    public static void uploadMultiplePhoto(StorageReference storageReference, List<Uri> uriList, Context context, int requestCode) {
+    public static void uploadMultiplePhoto(List<Uri> uriList, Language language, Context context) {
         List<Uri> failedUris = new ArrayList<>(); // To store failed files
         final ProgressDialog progressDialog = new ProgressDialog(context);
         progressDialog.setTitle("Uploading...");
@@ -115,7 +111,7 @@ public class MediaUtils {
         for (int i = 0; i < itemCount; i++) {
             Uri filePath = uriList.get(i);
             if (filePath != null) {
-                StorageReference ref = storageReference.child(userId + "/av" + System.currentTimeMillis());
+                StorageReference ref = FirebaseStorage.getInstance().getReference().child(userId + "/av" + System.currentTimeMillis());
                 int finalI = i;
                 int finalI1 = i;
                 ref.putFile(filePath).addOnSuccessListener(taskSnapshot -> {
@@ -123,17 +119,15 @@ public class MediaUtils {
                     if (progressDialog.isShowing()) {
                         progressDialog.dismiss();
                     }
-                    taskSnapshot.getMetadata().getReference().getDownloadUrl().addOnCompleteListener(uri -> {
-                        if (requestCode == REQUEST_VIDEO_PICK) {
-                            createThumbnailUploadTask(filePath, context).addOnSuccessListener(thumbnailSnapshot -> thumbnailSnapshot.getMetadata().getReference().getDownloadUrl().addOnCompleteListener(thumbnailUri -> Story.uploadVideoStory(uri.getResult().toString(), thumbnailUri.getResult().toString())));
-                        }
+                    taskSnapshot.getMetadata().getReference().getDownloadUrl().addOnCompleteListener(videoUri -> {
+                        createThumbnailUploadTask(filePath, context).addOnSuccessListener(thumbnailSnapshot -> thumbnailSnapshot.getMetadata().getReference().getDownloadUrl().addOnCompleteListener(thumbnailUri -> Post.uploadVideoStory(videoUri.getResult().toString(), thumbnailUri.getResult().toString(), language)));
                     });
                     Toast.makeText(context, "Uploaded file " + (finalI + 1) + " of " + itemCount, Toast.LENGTH_SHORT).show();
                     Log.e("TAG", "uploadMultiplePhoto: uploadedCount" + uploadedCount.get());
                     Log.e("TAG", "uploadMultiplePhoto: itemCount" + itemCount);
                     if (uploadedCount.get() == itemCount && !failedUris.isEmpty()) {
                         Log.e("TAG", "uploadMultiplePhoto: Starting showRetryDialog");
-                        showRetryDialog(context, failedUris, storageReference, requestCode);
+                        showRetryDialog(context, failedUris, language);
                     }
                 }).addOnFailureListener(e -> {
                     uploadedCount.getAndIncrement();
@@ -146,7 +140,7 @@ public class MediaUtils {
                     Log.e("TAG", "uploadMultiplePhoto: itemCount" + itemCount);
                     if (uploadedCount.get() == itemCount && !failedUris.isEmpty()) {
                         Log.e("TAG", "uploadMultiplePhoto: Starting showRetryDialog");
-                        showRetryDialog(context, failedUris, storageReference, requestCode);
+                        showRetryDialog(context, failedUris, language);
                     }
                 }).addOnProgressListener(taskSnapshot -> {
                     double progress = (100.0 * taskSnapshot.getBytesTransferred() / taskSnapshot.getTotalByteCount());
@@ -156,20 +150,15 @@ public class MediaUtils {
         }
     }
 
-    private static void showRetryDialog(Context context, List<Uri> failedUris, StorageReference storageReference, int requestCode) {
+    private static void showRetryDialog(Context context, List<Uri> failedUris, Language language) {
         Log.e("TAG", "Failed to upload file: showRetryDialog starting");
-        new MaterialAlertDialogBuilder(context)
-                .setTitle("Retry Failed Uploads?")
-                .setMessage("Some files failed to upload. Do you want to retry uploading them?")
-                .setPositiveButton("OK", (dialog, which) -> {
-                    uploadMultiplePhoto(storageReference, failedUris, context, requestCode);
-                    dialog.dismiss();
-                })
-                .setNegativeButton("Cancel", (dialog, which) -> {
-                    showFileNamesDialog(context, failedUris);
-                    dialog.dismiss();
-                })
-                .show();
+        new MaterialAlertDialogBuilder(context).setTitle("Retry Failed Uploads?").setMessage("Some files failed to upload. Do you want to retry uploading them?").setPositiveButton("OK", (dialog, which) -> {
+            uploadMultiplePhoto(failedUris, language, context);
+            dialog.dismiss();
+        }).setNegativeButton("Cancel", (dialog, which) -> {
+            showFileNamesDialog(context, failedUris);
+            dialog.dismiss();
+        }).show();
     }
 
     public static void showFileNamesDialog(Context context, List<Uri> uriList) {
@@ -177,18 +166,13 @@ public class MediaUtils {
         for (Uri uri : uriList) {
             stringBuilder.append(getAbsolutePath(uri, context)).append("\n");
         }
-        new MaterialAlertDialogBuilder(context)
-                .setTitle("Failed File Names")
-                .setMessage(stringBuilder.toString())
-                .setPositiveButton("COPY TO CLIPBOARD", (dialog, which) -> {
-                    // Copy all the file names to clipboard
-                    ClipboardManager clipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
-                    ClipData clip = ClipData.newPlainText("File Names", stringBuilder.toString());
-                    clipboard.setPrimaryClip(clip);
-                    Toast.makeText(context, "File names copied to clipboard", Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton("Exit", (dialog, which) -> dialog.dismiss())
-                .show();
+        new MaterialAlertDialogBuilder(context).setTitle("Failed File Names").setMessage(stringBuilder.toString()).setPositiveButton("COPY TO CLIPBOARD", (dialog, which) -> {
+            // Copy all the file names to clipboard
+            ClipboardManager clipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+            ClipData clip = ClipData.newPlainText("File Names", stringBuilder.toString());
+            clipboard.setPrimaryClip(clip);
+            Toast.makeText(context, "File names copied to clipboard", Toast.LENGTH_SHORT).show();
+        }).setNegativeButton("Exit", (dialog, which) -> dialog.dismiss()).show();
     }
 
     private static UploadTask createThumbnailUploadTask(Uri filePath, Context context) {

@@ -298,7 +298,7 @@ internal class PageViewHolder(
         }
     }
 
-    private suspend fun setSeen(videoData: VideoData) {
+    private fun setSeen(videoData: VideoData) {
         if (!videoData.key.isNullOrEmpty()) {
             val auth = FirebaseAuth.getInstance()
             val userId = auth.currentUser?.uid
