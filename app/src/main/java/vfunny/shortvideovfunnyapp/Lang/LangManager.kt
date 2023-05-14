@@ -44,6 +44,28 @@ class LangManager {
         return user.language + Language.WORLDWIDE
     }
 
+
+    fun setLanguage(userId: String, selectedLanguages: List<Language>) {
+        val mutableSelectedLanguages = selectedLanguages.toMutableList()
+        if (userId.isNotEmpty() && mutableSelectedLanguages.isNotEmpty()) {
+            val userLangRef = FirebaseDatabase.getInstance().getReference("users").child(userId)
+                .child(Const.kLanguageKey)
+            if(!mutableSelectedLanguages.contains(Language.WORLDWIDE)) {
+                    mutableSelectedLanguages.add(Language.WORLDWIDE)
+            }
+            Log.e(TAG, "mutableSelectedLanguages: $mutableSelectedLanguages")
+            userLangRef.setValue(mutableSelectedLanguages.toList()).addOnSuccessListener {
+                Log.e(TAG, "setLanguage success")
+            }.addOnFailureListener { exception ->
+                Log.e(TAG, "setLanguage Failure: $exception")
+            }.addOnCanceledListener {
+                Log.e(TAG, "setLanguage cancelled")
+            }
+        }
+    }
+
+
+
     /**
      *Adds all available languages to the user's language list in the database.
      *@param user the user object whose language list will be updated

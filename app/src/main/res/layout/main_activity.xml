@@ -61,6 +61,22 @@
         app:tint="@android:color/black"
         android:src="@android:drawable/ic_menu_directions" />
 
+
+    <ImageView
+        android:id="@+id/setLanguageBtn"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="@dimen/fui_auth_method_button_margin"
+        android:layout_marginEnd="@dimen/fui_auth_method_button_margin"
+        android:contentDescription="set Language"
+        android:src="@drawable/ic_baseline_checklist_24"
+        app:tint="@android:color/white"
+        android:background="@drawable/btn_bg"
+        app:maxImageSize="40dp" />
+
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/listBtn"
         android:layout_width="wrap_content"

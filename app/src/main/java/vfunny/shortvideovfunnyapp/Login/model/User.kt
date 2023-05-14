@@ -89,7 +89,7 @@ class User {
                 .child("seen")
         }
 
-        private fun getLanguage(userId: String): DatabaseReference {
+        fun getLanguage(userId: String): DatabaseReference {
             return FirebaseDatabase.getInstance().getReference(Const.kUsersKey).child(userId)
                 .child("language")
         }

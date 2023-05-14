@@ -10,16 +10,13 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.commit
 import androidx.fragment.app.replace
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.*
 import com.videopager.ui.VideoPagerFragment
 import vfunny.shortvideovfunnyapp.Live.ui.list.ListActivity
 import vfunny.shortvideovfunnyapp.Live.ui.migrate.MigrateListActivity
-import vfunny.shortvideovfunnyapp.Post.model.Const
 import vfunny.shortvideovfunnyapp.Login.Loginutils.AuthManager
 import vfunny.shortvideovfunnyapp.Login.model.User
+import vfunny.shortvideovfunnyapp.Post.model.Const
 import vfunny.shortvideovfunnyapp.R
 import vfunny.shortvideovfunnyapp.databinding.MainActivityBinding
 
@@ -43,7 +40,19 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
             fetchPosts()
         }
         setContentView(binding.root)
-        checkBuild()
+        setUiFromBuildType()
+        binding.setLanguageBtn.setOnClickListener {
+            val dialog = LanguageSelectionDialog(this)
+            dialog.setLanguageSelectionCallback(object : LanguageSelectionCallback {
+                override fun onLanguageSelected() {
+                    val intent = Intent(this@MainActivity, MainActivity::class.java)
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
+                    startActivity(intent)
+                    finish()
+                }
+            })
+            dialog.show()
+        }
     }
 
     private fun initWelcomeAnimation() {
@@ -96,6 +105,10 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
         binding.updateNotification.visibility = View.GONE
         binding.addCard.visibility = View.GONE
     }
+
+    override fun setLanguageSetup() {
+    }
+
 
     override fun getAdsStatus() {
         val adsEnabled = User.adsDatabaseReference()

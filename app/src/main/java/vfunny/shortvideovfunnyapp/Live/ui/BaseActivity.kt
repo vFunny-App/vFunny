@@ -103,7 +103,6 @@ abstract class BaseActivity : AppCompatActivity() {
     private fun sendUpdateNotification() {
         Thread(Runnable {
             val deviceState = OneSignal.getDeviceState()
-            val userId = deviceState?.userId
             val isSubscribed = deviceState != null && deviceState.isSubscribed
             if (!isSubscribed) return@Runnable
             try {
@@ -132,7 +131,7 @@ abstract class BaseActivity : AppCompatActivity() {
         }).start()
     }
 
-    fun checkBuild() {
+    fun setUiFromBuildType() {
         when (BUILD_TYPE) {
             "admin", "adminDebug" -> {
                 Toast.makeText(this@BaseActivity, "Running $BUILD_TYPE build", Toast.LENGTH_SHORT)
@@ -212,6 +211,8 @@ abstract class BaseActivity : AppCompatActivity() {
             })
         }
     }
+
+    abstract fun setLanguageSetup()
 
     abstract fun hideAdminUI()
 
@@ -314,6 +315,10 @@ abstract class BaseActivity : AppCompatActivity() {
             }
         val alert = builder.create()
         alert.show()
+    }
+
+    interface LanguageSelectionCallback {
+        fun onLanguageSelected()
     }
 
 }
