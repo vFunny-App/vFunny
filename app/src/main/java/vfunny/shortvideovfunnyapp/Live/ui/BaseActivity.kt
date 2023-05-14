@@ -161,14 +161,12 @@ abstract class BaseActivity : AppCompatActivity() {
                         AuthManager.getInstance().completeAuth(this@BaseActivity)
                     } else {
                         val user: User? = dataSnapshot.getValue(User::class.java)
-                        languageList = user?.language ?: Language.getAllLanguages()
+                        user?.id = User.currentKey()
+                        languageList = LangManager.instance.getUserLanguages(user)
                         if (!languageList.contains(Language.WORLDWIDE)) {
                             Log.e(TAG, "user doesn't have ww language")
                             if (user != null) {
-                                user.id = User.currentKey()
-                                languageList =
-                                    LangManager.instance.addWorldWideLangToDb(this@BaseActivity,
-                                        user)
+                                languageList = LangManager.instance.addWorldWideLangToDb(user)
                             }
                         }
                     }

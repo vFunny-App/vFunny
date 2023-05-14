@@ -43,9 +43,8 @@ class MigratePostAdapter(
     var context: Context,
     private val imageLoader: ImageLoader,
     private val itemWidth: Int,
-    private val mData: ArrayList<Post>
-) :
-    RecyclerView.Adapter<MigratePostAdapter.MigratePostViewHolder>() {
+    private val mData: ArrayList<Post>,
+) : RecyclerView.Adapter<MigratePostAdapter.MigratePostViewHolder>() {
 
     companion object {
         private val simpleDateFormat = SimpleDateFormat("d/M/yy h:mm a", Locale.ENGLISH)
@@ -56,8 +55,8 @@ class MigratePostAdapter(
         viewGroup: ViewGroup,
         i: Int,
     ): MigratePostViewHolder {
-        val view =
-            LayoutInflater.from(viewGroup.context).inflate(R.layout.migrate_item_list, viewGroup, false)
+        val view = LayoutInflater.from(viewGroup.context)
+            .inflate(R.layout.migrate_item_list, viewGroup, false)
         return MigratePostViewHolder(view, imageLoader)
     }
 
@@ -71,17 +70,17 @@ class MigratePostAdapter(
         layoutParams.width = itemWidth // divide by number of columns
         holder.itemView.layoutParams = layoutParams
         holder.itemView.setOnClickListener {
-            val postRef =
-                currentPost.key?.let { it1 ->
-                    FirebaseDatabase.getInstance().getReference("posts").child(it1)
-                }
-            val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_migrate_video, null)
+            val postRef = currentPost.key?.let { it1 ->
+                FirebaseDatabase.getInstance().getReference("posts").child(it1)
+            }
+            val dialogView =
+                LayoutInflater.from(context).inflate(R.layout.dialog_migrate_video, null)
             val videoView = dialogView.findViewById<PlayerView>(R.id.item_player_view)
             val dateTextView = dialogView.findViewById<TextView>(R.id.date_tv)
             val migrateBtn = dialogView.findViewById<Button>(R.id.migrate_btn)
             currentPost.timestamp?.let {
                 try {
-                    if(it is Long) {
+                    if (it is Long) {
                         dateTextView.text = "Time : ${simpleDateFormat.format(0 - it)}"
                     }
                 } catch (e: Exception) {
@@ -90,11 +89,7 @@ class MigratePostAdapter(
             }
 
             if (currentPost.video == null || currentPost.image == null) {
-                Toast.makeText(
-                    context,
-                    "Something went wrong",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(context, "Something went wrong", Toast.LENGTH_SHORT).show()
                 val dialog = AlertDialog.Builder(context).setView(dialogView)
                     .setPositiveButton("Delete") { dialog, _ ->
                         deleteItem(currentPost, postRef, position, context = context)
@@ -108,9 +103,8 @@ class MigratePostAdapter(
             videoView.player = player
             val videoUri = Uri.parse(currentPost.video)
             val mediaItem = MediaItem.fromUri(videoUri)
-            val mediaSource =
-                ProgressiveMediaSource.Factory(DefaultDataSourceFactory(context))
-                    .createMediaSource(mediaItem)
+            val mediaSource = ProgressiveMediaSource.Factory(DefaultDataSourceFactory(context))
+                .createMediaSource(mediaItem)
             player.setMediaSource(mediaSource)
             player.prepare()
             player.play()
@@ -152,17 +146,15 @@ class MigratePostAdapter(
         item: Language,
         post: Post,
         adapterPostion: Int,
-        dialogInterface: DialogInterface
+        dialogInterface: DialogInterface,
     ) {
         val builder = AlertDialog.Builder(context)
         builder.setMessage("Are you sure you want to set Language to ${item.name}?")
-            .setCancelable(false)
-            .setPositiveButton("Yes") { dialog, _ ->
-                migratePostToLang(context, post, item, adapterPostion);
+            .setCancelable(false).setPositiveButton("Yes") { dialog, _ ->
+                migratePostToLang(context, post, item, adapterPostion)
                 dialog.dismiss()
                 dialogInterface.dismiss()
-            }
-            .setNegativeButton("No") { dialog, _ ->
+            }.setNegativeButton("No") { dialog, _ ->
                 // Dismiss the dialog
                 dialog.dismiss()
             }
@@ -172,20 +164,27 @@ class MigratePostAdapter(
 
 
     /**
-    * * It gets references to the RTDB and RTDB posts.
-    * *  It creates a ProgressDialog to show during the migration process.
-    * * It adds the post data to the RTDB collection using the add method. This returns a Task object that can be used to listen for success or failure events.
-    * * On success, it updates the "migrated" field in the RTDB post using the updateChildren method. This also returns a Task object that can be used to listen for success or failure events.
-    * * On success of updating the RTDB post, it dismisses the progress dialog and shows a success message.
-    * * On failure at any step, it dismisses the progress dialog and shows an error message.
-    */
-    private fun migratePostToLang(context: Context, post: Post, language: Language, adapterPostion: Int) {
+     * * It gets references to the RTDB and RTDB posts.
+     * *  It creates a ProgressDialog to show during the migration process.
+     * * It adds the post data to the RTDB collection using the add method. This returns a Task object that can be used to listen for success or failure events.
+     * * On success, it updates the "migrated" field in the RTDB post using the updateChildren method. This also returns a Task object that can be used to listen for success or failure events.
+     * * On success of updating the RTDB post, it dismisses the progress dialog and shows a success message.
+     * * On failure at any step, it dismisses the progress dialog and shows an error message.
+     */
+    private fun migratePostToLang(
+        context: Context,
+        post: Post,
+        language: Language,
+        adapterPostion: Int,
+    ) {
         // Get references to the ORIGINAL RTDB and NEW LANGUAGE RTDB posts
-        Log.e(TAG, "post: $post", )
-        Log.e(TAG, "language: $language", )
-        Log.e(TAG, "adapterPostion: $adapterPostion", )
-        val rtdbPostRef = post.key?.let { FirebaseDatabase.getInstance().reference.child("posts").child(it) }
-        val firestorePostRef = FirebaseDatabase.getInstance().reference.child("posts_${language.code}")
+        Log.e(TAG, "post: $post")
+        Log.e(TAG, "language: $language")
+        Log.e(TAG, "adapterPostion: $adapterPostion")
+        val rtdbPostRef =
+            post.key?.let { FirebaseDatabase.getInstance().reference.child("posts").child(it) }
+        val firestorePostRef =
+            FirebaseDatabase.getInstance().reference.child("posts_${language.code}")
 
         // Create a progress dialog to show during the migration process
         val progressDialog = ProgressDialog(context)
@@ -197,35 +196,42 @@ class MigratePostAdapter(
         val post2 = post.copy()
         post2.timestamp
         post2.key = null
-        if(post2.timestamp is Long && (post2.timestamp as Long) < 0)
-            post2.timestamp = (0 - (post2.timestamp as Long))
+        if (post2.timestamp is Long && (post2.timestamp as Long) < 0) post2.timestamp =
+            (0 - (post2.timestamp as Long))
         else {
             post2.timestamp = System.currentTimeMillis()
         }
-        Log.e(TAG, "migratePostFromRtdbToFirestore: $post2", )
-        firestorePostRef.setValue(post2)
-            .addOnSuccessListener {
-                Log.e(TAG, "migratePostFromRtdbToFirestore: $it", )
+        Log.e(TAG, "migratePostFromRtdbToFirestore: $post2")
+        firestorePostRef.push().setValue(post2).addOnSuccessListener {
+                Log.e(TAG, "migratePostFromRtdbToFirestore: $it")
                 // On success, update the "migrated" field in the RTDB post and remove the post from the adapter
-                rtdbPostRef?.updateChildren(mapOf("migrated" to true))
-                    ?.addOnSuccessListener {
-                        Log.e(TAG, "migratePostFromRtdbToFirestore: $it", )
+                rtdbPostRef?.updateChildren(mapOf("migrated" to true))?.addOnSuccessListener {
+                        Log.e(TAG, "migratePostFromRtdbToFirestore: $it")
                         // On success, dismiss the progress dialog and show a success message
                         progressDialog.dismiss()
-                        mData.removeAt(adapterPostion)
-                        notifyItemRemoved(adapterPostion)
-                        Toast.makeText(context, "Post migrated successfully!", Toast.LENGTH_SHORT).show()
-                    }
-                    ?.addOnFailureListener { e ->
+                        if (adapterPostion < mData.size) {
+                            mData.removeAt(adapterPostion)
+                            notifyItemRemoved(adapterPostion)
+                        } else {
+                            Toast.makeText(context,
+                                "$adapterPostion ! ${mData.size}",
+                                Toast.LENGTH_LONG).show()
+                        }
+                        Toast.makeText(context, "Post migrated successfully!", Toast.LENGTH_SHORT)
+                            .show()
+                    }?.addOnFailureListener { e ->
                         // On failure, dismiss the progress dialog and show an error message
                         progressDialog.dismiss()
-                        Toast.makeText(context, "Failed to update RTDB post: ${e.message}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context,
+                            "Failed to update RTDB post: ${e.message}",
+                            Toast.LENGTH_SHORT).show()
                     }
-            }
-            .addOnFailureListener { e ->
+            }.addOnFailureListener { e ->
                 // On failure, dismiss the progress dialog and show an error message
                 progressDialog.dismiss()
-                Toast.makeText(context, "Failed to migrate post to Firestore: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context,
+                    "Failed to migrate post to Firestore: ${e.message}",
+                    Toast.LENGTH_SHORT).show()
             }
     }
 
@@ -257,11 +263,8 @@ class MigratePostAdapter(
                                 if (progressDialog.isShowing) {
                                     progressDialog.dismiss()
                                 }
-                                Toast.makeText(
-                                    context,
-                                    "Failed " + e.message,
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                Toast.makeText(context, "Failed " + e.message, Toast.LENGTH_SHORT)
+                                    .show()
                             }
                     }
                 }
@@ -270,16 +273,13 @@ class MigratePostAdapter(
                     if (videoSegments.size == 2) {
                         val videoFolderName = videoSegments[0]
                         val videoFileName = videoSegments[1]
-                        storageReference.child(videoFolderName).child(videoFileName)
-                            .delete().addOnFailureListener { e ->
+                        storageReference.child(videoFolderName).child(videoFileName).delete()
+                            .addOnFailureListener { e ->
                                 if (progressDialog.isShowing) {
                                     progressDialog.dismiss()
                                 }
-                                Toast.makeText(
-                                    context,
-                                    "Failed " + e.message,
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                Toast.makeText(context, "Failed " + e.message, Toast.LENGTH_SHORT)
+                                    .show()
                                 Log.e("TAG", "Failed : " + e.message)
                             }
                     }
@@ -291,19 +291,14 @@ class MigratePostAdapter(
                     }.addOnFailureListener {
                         Log.e(TAG, "deleteItem: $postRef")
                         Log.e(TAG, "deleteItem: $it")
-                        Toast.makeText(
-                            context,
+                        Toast.makeText(context,
                             "Something went wrong removing post reference",
-                            Toast.LENGTH_SHORT
-                        )
-                            .show()
+                            Toast.LENGTH_SHORT).show()
                     }
                 } else {
-                    Toast.makeText(
-                        context,
+                    Toast.makeText(context,
                         "Something went wrong removing post null reference",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                        Toast.LENGTH_SHORT).show()
                 }
                 if (progressDialog.isShowing) {
                     progressDialog.dismiss()

@@ -14,7 +14,6 @@ data class Post(
     var migrated: Boolean? = null,
     var timestamp: Any? = null,
     var language: Language? = null,
-    var watchedBy: List<String>? = null,
 ) {
 
     companion object {

@@ -23,7 +23,7 @@ open class MigrateListActivity : AppCompatActivity() {
     private var TOTAL_FETCH_COUNT = 0
 
     companion object {
-        private const val MAX_POSTS = 100
+        private const val MAX_POSTS = 50
         private const val MAX_RETRIES = 20
     }
 
