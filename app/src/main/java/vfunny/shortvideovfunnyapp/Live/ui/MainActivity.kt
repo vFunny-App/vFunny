@@ -12,6 +12,7 @@ import androidx.fragment.app.commit
 import androidx.fragment.app.replace
 import com.google.firebase.database.*
 import com.videopager.ui.VideoPagerFragment
+import vfunny.shortvideovfunnyapp.Lang.ui.LangListActivity
 import vfunny.shortvideovfunnyapp.Live.ui.list.ListActivity
 import vfunny.shortvideovfunnyapp.Live.ui.migrate.MigrateListActivity
 import vfunny.shortvideovfunnyapp.Login.Loginutils.AuthManager
@@ -99,6 +100,7 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
     }
 
     override fun hideAdminUI() {
+        binding.LangListBtn.visibility = View.GONE
         binding.migratelistBtn.visibility = View.GONE
         binding.listBtn.visibility = View.GONE
         binding.addBtn.visibility = View.GONE
@@ -148,6 +150,10 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
         }
         binding.migratelistBtn.setOnClickListener {
             val intent = Intent(this, MigrateListActivity::class.java)
+            startActivity(intent)
+        }
+        binding.LangListBtn.setOnClickListener {
+            val intent = Intent(this, LangListActivity::class.java)
             startActivity(intent)
         }
         binding.updateNotification.setOnClickListener { showUpdateNotificationConfirmationDialog() }

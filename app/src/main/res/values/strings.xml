@@ -8,5 +8,10 @@
     <string name="name_placeholder">name</string>
     <string name="upload_pending">Pending</string>
     <string name="upload_complete">Completed</string>
+    <string name="title_activity_lang_list">LangListActivity</string>
+    <string name="tab_text_1">Tab 1</string>
+    <string name="tab_text_2">Tab 2</string>
+    <string name="tab_text_3">Tab 3</string>
+    <string name="tab_text_4">Tab 4</string>
 
 </resources>

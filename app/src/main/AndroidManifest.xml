@@ -4,7 +4,7 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name="com.MyApp"
@@ -16,33 +16,42 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Exoviewpagerfun">
         <activity
+            android:name=".LangListActivity"
+            android:exported="false"
+            android:label="@string/title_activity_lang_list"
+            android:theme="@style/Theme.Exoviewpagerfun.NoActionBar">
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
+        </activity>
+        <activity
             android:name=".Live.ui.MainActivity"
-            android:icon="@mipmap/ic_launcher"
-            android:exported="true">
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".Live.ui.list.ListActivity"
             android:exported="false" />
-
         <activity
             android:name=".Live.ui.migrate.MigrateListActivity"
+            android:exported="false" />
+        <activity
+            android:name=".Lang.ui.LangListActivity"
             android:exported="false" />
 
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="@string/APP_ID" />
 
-        <service android:name="com.exo.service.VideoPreLoadingService"/>
-
-        <!-- name doesn't change, value = your class fully name spaced-->
-        <meta-data android:name="com.onesignal.NotificationServiceExtension"
+        <service android:name="com.exo.service.VideoPreLoadingService" /> <!-- name doesn't change, value = your class fully name spaced -->
+        <meta-data
+            android:name="com.onesignal.NotificationServiceExtension"
             android:value="vfunny.shortvideovfunnyapp.Notification.NotificationServiceExtension" />
-
     </application>
 
 </manifest>
