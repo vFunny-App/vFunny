@@ -196,6 +196,13 @@ abstract class BaseActivity : AppCompatActivity() {
                                     type = ADS_TYPE))
                             }
                         }
+                        if(videoItemList.size == 0) {
+                            showEmptyVideos()
+                            return@launch
+                        }
+
+                        showEmptyVideos()
+                        return@launch
                         Log.d(TAG, "onDataChange: FINAL videoItemList.size ${videoItemList.size}")
                         val module = MainModule(this@BaseActivity, videoItemList)
                         supportFragmentManager.fragmentFactory = module.fragmentFactory
@@ -219,6 +226,7 @@ abstract class BaseActivity : AppCompatActivity() {
     abstract fun addAdminButtons()
 
     abstract fun showVideos()
+    abstract fun showEmptyVideos()
 
     override fun onRequestPermissionsResult(
         requestCode: Int,

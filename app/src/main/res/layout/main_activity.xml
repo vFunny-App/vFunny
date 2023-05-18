@@ -12,6 +12,31 @@
         android:layout_height="match_parent"
         android:visibility="gone" />
 
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/empty_views_lyt"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/fragment_container"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            style="@android:style/Widget.Material.EditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_gradient"
+            android:textColor="@color/white"
+            android:text="No Videos Available\n Please try again later"
+            android:textAlignment="center"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.2" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/loading_lyt"
         android:layout_width="match_parent"

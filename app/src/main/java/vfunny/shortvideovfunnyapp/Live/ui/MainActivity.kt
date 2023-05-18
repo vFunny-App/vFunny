@@ -172,6 +172,14 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
         binding.loadingLyt.removeAllViewsInLayout()
     }
 
+    override fun showEmptyVideos() {
+        binding.animationView.clearAnimation()
+        binding.fragmentContainer.removeAllViewsInLayout()
+        binding.fragmentContainer.visibility = View.GONE
+        binding.loadingLyt.removeAllViewsInLayout()
+        binding.emptyViewsLyt.visibility = View.VISIBLE
+    }
+
     override fun onAuthSuccess(user: User?) {
         if (User.current() != null && mUser?.name == null) {
             mUser!!.name = getString(R.string.name_placeholder)
