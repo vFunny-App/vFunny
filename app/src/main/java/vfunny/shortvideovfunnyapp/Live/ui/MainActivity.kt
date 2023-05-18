@@ -108,10 +108,6 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
         binding.addCard.visibility = View.GONE
     }
 
-    override fun setLanguageSetup() {
-    }
-
-
     override fun getAdsStatus() {
         val adsEnabled = User.adsDatabaseReference()
         adsEnabled.addListenerForSingleValueEvent(object : ValueEventListener {
@@ -166,6 +162,14 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
         binding.animationView.clearAnimation()
         binding.fragmentContainer.visibility = View.VISIBLE
         binding.loadingLyt.removeAllViewsInLayout()
+    }
+
+    override fun showEmptyVideos() {
+        binding.animationView.clearAnimation()
+        binding.fragmentContainer.removeAllViewsInLayout()
+        binding.fragmentContainer.visibility = View.GONE
+        binding.loadingLyt.removeAllViewsInLayout()
+        binding.emptyViewsLyt.visibility = View.VISIBLE
     }
 
     override fun onAuthSuccess(user: User?) {
