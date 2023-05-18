@@ -200,9 +200,6 @@ abstract class BaseActivity : AppCompatActivity() {
                             showEmptyVideos()
                             return@launch
                         }
-
-                        showEmptyVideos()
-                        return@launch
                         Log.d(TAG, "onDataChange: FINAL videoItemList.size ${videoItemList.size}")
                         val module = MainModule(this@BaseActivity, videoItemList)
                         supportFragmentManager.fragmentFactory = module.fragmentFactory
