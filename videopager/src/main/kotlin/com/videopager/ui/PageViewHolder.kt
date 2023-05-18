@@ -1,5 +1,6 @@
 package com.videopager.ui
 
+import android.app.DownloadManager
 import android.app.ProgressDialog
 import android.content.Context
 import android.content.Intent
@@ -10,6 +11,7 @@ import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.core.view.isVisible
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.lifecycle.lifecycleScope
@@ -43,6 +45,7 @@ import kotlinx.coroutines.launch
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.IOException
+import java.text.SimpleDateFormat
 import java.util.*
 
 val ONESIGNAL_APP_ID = "0695d934-66e2-43f6-9853-dbedd55b86ca"
@@ -262,6 +265,7 @@ internal class PageViewHolder(
             binding.previewImage.load(videoData.previewImageUri, imageLoader)
             binding.waShare.setOnClickListener { shareWaClick(videoData.mediaUri) }
             binding.share.setOnClickListener { shareClick(videoData.mediaUri) }
+            binding.downloadButton.setOnClickListener { startDownload(videoData.mediaUri, itemView.context) }
             binding.moreOptions.setOnClickListener {
                 moreOptionClick(videoData.mediaUri, binding.moreOptions)
             }
@@ -316,6 +320,18 @@ internal class PageViewHolder(
             binding.adContainer.visibility = View.VISIBLE
             refreshAd(binding.adContainer)
         }
+    }
+
+    private fun startDownload(mediaUri: String, context : Context) {
+        val dateFormat = SimpleDateFormat("h_mma_ddMMMyyyy", Locale.getDefault())
+        val currentTime = dateFormat.format(Date())
+        val request = DownloadManager.Request(Uri.parse(mediaUri))
+            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+            .setTitle("Vfunny_$currentTime")
+        val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        downloadManager.enqueue(request)
+        Toast.makeText(context, "Download started", Toast.LENGTH_SHORT).show()
+        // You can save the downloadId if you need to later reference the download
     }
 
     /**

@@ -212,8 +212,6 @@ abstract class BaseActivity : AppCompatActivity() {
         }
     }
 
-    abstract fun setLanguageSetup()
-
     abstract fun hideAdminUI()
 
     abstract fun getAdsStatus()
@@ -258,6 +256,8 @@ abstract class BaseActivity : AppCompatActivity() {
             if (resultCode == RESULT_OK) {
                 AuthManager.getInstance().completeAuth(this)
                 val intent = Intent(this, MainActivity::class.java)
+                intent.putExtra("showLanguage", true)
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
                 startActivity(intent)
                 finish()
             } else {

@@ -25,14 +25,14 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
     private val TAG: String = "MainActivity"
     private var mUser: User? = null
     private var context: Context? = null
-    private var activity: MainActivity? = null
+    private var showLanguage = false
     private lateinit var binding: MainActivityBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Manual dependency injection
         context = this.applicationContext
-        activity = this
         super.onCreate(savedInstanceState)
+        showLanguage = intent.getBooleanExtra("showLanguage", false)
         binding = MainActivityBinding.inflate(layoutInflater)
         initWelcomeAnimation()
         if (User.currentKey() == null) {
@@ -43,17 +43,25 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
         setContentView(binding.root)
         setUiFromBuildType()
         binding.setLanguageBtn.setOnClickListener {
-            val dialog = LanguageSelectionDialog(this)
-            dialog.setLanguageSelectionCallback(object : LanguageSelectionCallback {
-                override fun onLanguageSelected() {
-                    val intent = Intent(this@MainActivity, MainActivity::class.java)
-                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
-                    startActivity(intent)
-                    finish()
-                }
-            })
-            dialog.show()
+            showLanguageDialog()
         }
+        if(showLanguage){
+            showLanguageDialog()
+        }
+    }
+
+    private fun showLanguageDialog() {
+        showLanguage = false
+        val dialog = LanguageSelectionDialog(this)
+        dialog.setLanguageSelectionCallback(object : LanguageSelectionCallback {
+            override fun onLanguageSelected() {
+                val intent = Intent(this@MainActivity, MainActivity::class.java)
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
+                startActivity(intent)
+                finish()
+            }
+        })
+        dialog.show()
     }
 
     private fun initWelcomeAnimation() {
@@ -87,7 +95,7 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
                     isAdsEnabled = value
                 }.addOnFailureListener {
                     binding.adsSwitch.isChecked = !value
-                    Toast.makeText(activity,
+                    Toast.makeText(this@MainActivity,
                         "Something went wrong while changing ads Status",
                         Toast.LENGTH_LONG).show()
                     Log.e(TAG, "showConfirmationDialog: Error : ", it)
@@ -107,10 +115,6 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
         binding.updateNotification.visibility = View.GONE
         binding.addCard.visibility = View.GONE
     }
-
-    override fun setLanguageSetup() {
-    }
-
 
     override fun getAdsStatus() {
         val adsEnabled = User.adsDatabaseReference()
@@ -138,8 +142,8 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
 
     override fun addAdminButtons() {
         binding.addBtn.setOnClickListener {
-            if (MediaUtils.storagePermissionGrant(activity)) {
-                MediaUtils.openVideoLibrary(activity, MediaUtils.REQUEST_VIDEO_PICK)
+            if (MediaUtils.storagePermissionGrant(this@MainActivity)) {
+                MediaUtils.openVideoLibrary(this@MainActivity, MediaUtils.REQUEST_VIDEO_PICK)
             } else {
                 //TODO open settings to change permissions
             }
