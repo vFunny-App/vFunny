@@ -1,4 +1,4 @@
-package vfunny.shortvideovfunnyapp.Live.ui.migrate
+package vfunny.shortvideovfunnyapp.Lang.ui
 
 import android.app.ProgressDialog
 import android.content.Context
@@ -24,9 +24,11 @@ import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
-import com.google.firebase.database.DatabaseReference
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
+import com.videopager.PostManager
 import vfunny.shortvideovfunnyapp.Post.model.Language
 import com.videopager.models.Post
 import vfunny.shortvideovfunnyapp.R
@@ -39,12 +41,12 @@ import java.util.*
  * Copyright by Shresthasaurabh86@gmail.com
  */
 
-class MigratePostAdapter(
+class LangListAdapter(
     var context: Context,
     private val imageLoader: ImageLoader,
     private val itemWidth: Int,
     private val mData: ArrayList<Post>,
-) : RecyclerView.Adapter<MigratePostAdapter.MigratePostViewHolder>() {
+) : RecyclerView.Adapter<LangListAdapter.MigratePostViewHolder>() {
 
     companion object {
         private val simpleDateFormat = SimpleDateFormat("d/M/yy h:mm a", Locale.ENGLISH)
@@ -92,7 +94,7 @@ class MigratePostAdapter(
                 Toast.makeText(context, "Something went wrong", Toast.LENGTH_SHORT).show()
                 val dialog = AlertDialog.Builder(context).setView(dialogView)
                     .setPositiveButton("Delete") { dialog, _ ->
-                        deleteItem(currentPost, postRef, position, context = context)
+                        deleteItem(currentPost, position, context = context)
                         dialog.dismiss()
                     }.setNegativeButton("Cancel", null).create()
                 dialog.show()
@@ -114,7 +116,7 @@ class MigratePostAdapter(
             // Show the dialog
             val dialog = AlertDialog.Builder(context).setView(dialogView)
                 .setPositiveButton("Delete") { dialog, _ ->
-                    deleteItem(currentPost, postRef, position, context)
+                    deleteItem(currentPost, position, context)
                     player.release()
                     dialog.dismiss()
                 }.setNegativeButton("Cancel") { dialog, _ ->
@@ -181,9 +183,9 @@ class MigratePostAdapter(
         Log.e(TAG, "post: $post")
         Log.e(TAG, "language: $language")
         Log.e(TAG, "adapterPostion: $adapterPostion")
-        val rtdbPostRef =
-            post.key?.let { FirebaseDatabase.getInstance().reference.child("posts").child(it) }
-        val firestorePostRef =
+        val oldReference =
+            post.key?.let { FirebaseDatabase.getInstance().reference.child("posts_${post.language?.code}").child(it) }
+        val newReference =
             FirebaseDatabase.getInstance().reference.child("posts_${language.code}")
 
         // Create a progress dialog to show during the migration process
@@ -194,7 +196,6 @@ class MigratePostAdapter(
 
         // Add the post data to Firestore
         val post2 = post.copy()
-        post2.timestamp
         post2.key = null
         if (post2.timestamp is Long && (post2.timestamp as Long) < 0) post2.timestamp =
             (0 - (post2.timestamp as Long))
@@ -202,16 +203,15 @@ class MigratePostAdapter(
             post2.timestamp = System.currentTimeMillis()
         }
         Log.e(TAG, "migratePostFromRtdbToFirestore: $post2")
-        firestorePostRef.push().setValue(post2).addOnSuccessListener {
+        newReference.push().setValue(post2).addOnSuccessListener {
                 Log.e(TAG, "migratePostFromRtdbToFirestore: $it")
                 // On success, update the "migrated" field in the RTDB post and remove the post from the adapter
-                rtdbPostRef?.updateChildren(mapOf("migrated" to true))?.addOnSuccessListener {
+                oldReference?.updateChildren(mapOf("migrated" to true))?.addOnSuccessListener {
                         Log.e(TAG, "migratePostFromRtdbToFirestore: $it")
                         // On success, dismiss the progress dialog and show a success message
                         progressDialog.dismiss()
                         if (adapterPostion < mData.size) {
-                            mData.removeAt(adapterPostion)
-                            notifyItemRemoved(adapterPostion)
+                            deleteItem(post, adapterPostion, context)
                         } else {
                             Toast.makeText(context,
                                 "$adapterPostion ! ${mData.size}",
@@ -237,77 +237,46 @@ class MigratePostAdapter(
 
     private fun deleteItem(
         videoData: Post,
-        postRef: DatabaseReference?,
         viewPosition: Int,
         context: Context,
     ) {
-        val builder = AlertDialog.Builder(context)
         val storage = FirebaseStorage.getInstance()
-        val storageReference = FirebaseStorage.getInstance().reference
-        val thumbnailRef = videoData.video?.let { storage.getReferenceFromUrl(it) }
-        val videoRef = videoData.image?.let { storage.getReferenceFromUrl(it) }
-        builder.setCancelable(false)
-        builder.setMessage("Do you want to delete this item?")
-            .setPositiveButton("Yes") { dialog, id ->
+        var thumbnailRef: StorageReference? = null
+        var videoRef: StorageReference? = null
+        // If the key or language is missing, show a toast and return early
+        if (videoData.key == null || videoData.language == null) {
+            Toast.makeText(context, "Can't find key or language", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (!videoData.image.isNullOrEmpty()) {
+            thumbnailRef = storage.getReferenceFromUrl(videoData.image!!)
+        }
+        if (!videoData.video.isNullOrEmpty()) {
+            videoRef = storage.getReferenceFromUrl(videoData.video!!)
+        }
+
+        val postManager = PostManager.instance
+
+        MaterialAlertDialogBuilder(context, android.R.style.Theme_Material_Dialog_Alert)
+            .setTitle("WARNING!")
+            .setMessage("Do you want to delete this item?")
+            .setPositiveButton("Yes") { dialog, _ ->
                 // User clicked Yes button
-                val progressDialog = ProgressDialog(context)
-                progressDialog.setTitle("Deleting...")
-                progressDialog.show()
-                if (thumbnailRef != null && thumbnailRef.toString().contains("/")) {
-                    val thumbnailSegments = thumbnailRef.toString().split("/")
-                    if (thumbnailSegments.size == 2) {
-                        val thumbnailFolderName = thumbnailSegments[0]
-                        val thumbnailFileName = thumbnailSegments[1]
-                        storageReference.child(thumbnailFolderName).child(thumbnailFileName)
-                            .delete().addOnFailureListener { e: java.lang.Exception ->
-                                if (progressDialog.isShowing) {
-                                    progressDialog.dismiss()
-                                }
-                                Toast.makeText(context, "Failed " + e.message, Toast.LENGTH_SHORT)
-                                    .show()
-                            }
-                    }
-                }
-                if (videoRef != null && videoRef.toString().contains("/")) {
-                    val videoSegments = videoRef.toString().split("/")
-                    if (videoSegments.size == 2) {
-                        val videoFolderName = videoSegments[0]
-                        val videoFileName = videoSegments[1]
-                        storageReference.child(videoFolderName).child(videoFileName).delete()
-                            .addOnFailureListener { e ->
-                                if (progressDialog.isShowing) {
-                                    progressDialog.dismiss()
-                                }
-                                Toast.makeText(context, "Failed " + e.message, Toast.LENGTH_SHORT)
-                                    .show()
-                                Log.e("TAG", "Failed : " + e.message)
-                            }
-                    }
-                }
-                if (postRef != null) {
-                    postRef.removeValue().addOnSuccessListener {
-                        notifyItemRemoved(viewPosition)
-                        Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show()
-                    }.addOnFailureListener {
-                        Log.e(TAG, "deleteItem: $postRef")
-                        Log.e(TAG, "deleteItem: $it")
-                        Toast.makeText(context,
-                            "Something went wrong removing post reference",
-                            Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    Toast.makeText(context,
-                        "Something went wrong removing post null reference",
-                        Toast.LENGTH_SHORT).show()
-                }
-                if (progressDialog.isShowing) {
-                    progressDialog.dismiss()
-                }
-            }.setNegativeButton("No") { _, _ ->
-                // User cancelled the dialog
-                Toast.makeText(context, "Cancelled", Toast.LENGTH_SHORT).show()
+                postManager.showProgressDialog(context, "Deleting...")
+                postManager.deleteFileFromStorage(context, thumbnailRef)
+                postManager.deleteFileFromStorage(context, videoRef)
+                postManager.deletePostReferenceFromDatabase(context, videoData)
+                postManager.dismissProgressDialog(dialog)
+                mData.removeAt(viewPosition)
+                notifyItemRemoved(viewPosition)
             }
-        builder.create().show()
+            .setNegativeButton("No") { dialog, _ ->
+                // User cancelled the dialog
+                postManager.dismissProgressDialog(dialog)
+                postManager.showToast(context, "Cancelled")
+            }
+            .setCancelable(false)
+            .show()
     }
 
     override fun getItemCount(): Int {

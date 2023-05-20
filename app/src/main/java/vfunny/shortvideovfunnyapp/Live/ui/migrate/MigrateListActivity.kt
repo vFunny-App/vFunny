@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import coil.imageLoader
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.database.*
-import vfunny.shortvideovfunnyapp.Post.model.Post
+import com.videopager.models.Post
 import vfunny.shortvideovfunnyapp.databinding.MigrateListActivityBinding
 
 

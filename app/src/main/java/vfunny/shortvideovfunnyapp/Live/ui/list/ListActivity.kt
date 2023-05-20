@@ -3,13 +3,12 @@ package vfunny.shortvideovfunnyapp.Live.ui.list
 import android.os.Bundle
 import android.util.DisplayMetrics
 import android.util.Log
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import coil.imageLoader
 import com.google.firebase.database.*
-import vfunny.shortvideovfunnyapp.Post.model.Post
+import com.videopager.models.Post
 import vfunny.shortvideovfunnyapp.databinding.ListActivityBinding
 
 

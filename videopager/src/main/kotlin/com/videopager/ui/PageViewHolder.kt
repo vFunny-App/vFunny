@@ -105,7 +105,8 @@ internal class PageViewHolder(
         if (videoData.key == null || videoData.language == null) {
             Toast.makeText(context, "Can't find key or language", Toast.LENGTH_SHORT).show()
             return
-        } else if (videoData.previewImageUri.isNotEmpty()) {
+        }
+        if (videoData.previewImageUri.isNotEmpty()) {
             thumbnailRef = storage.getReferenceFromUrl(videoData.previewImageUri)
         }
         if (videoData.mediaUri.isNotEmpty()) {

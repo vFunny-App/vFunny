@@ -1,6 +1,7 @@
-package vfunny.shortvideovfunnyapp.Post.model
+package com.videopager.models
 
 import com.google.firebase.database.DataSnapshot
+import vfunny.shortvideovfunnyapp.Post.model.Language
 
 
 /**

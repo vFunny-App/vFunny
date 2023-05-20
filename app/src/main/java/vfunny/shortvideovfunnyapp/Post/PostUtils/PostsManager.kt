@@ -13,7 +13,7 @@ import vfunny.shortvideovfunnyapp.BuildConfig.BUILD_TYPE
 import vfunny.shortvideovfunnyapp.Login.model.User
 import vfunny.shortvideovfunnyapp.Post.model.Const
 import vfunny.shortvideovfunnyapp.Post.model.Language
-import vfunny.shortvideovfunnyapp.Post.model.Post
+import com.videopager.models.Post
 
 /**
  * Created by shresthasaurabh86@gmail.com 09/05/2023.

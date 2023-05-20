@@ -9,6 +9,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import com.player.models.VideoData
+import com.videopager.models.Post
 
 /**
  * Created by shresthasaurabh86@gmail.com 09/05/2023.
@@ -51,6 +52,16 @@ class PostManager {
     }
 
     fun deletePostReferenceFromDatabase(context: Context, videoData: VideoData) {
+        val databaseRef =
+            FirebaseDatabase.getInstance().getReference("posts_${videoData.language!!.code}")
+        databaseRef.child(videoData.key!!).removeValue().addOnSuccessListener {
+            showToast(context, "Deleted")
+        }.addOnFailureListener {
+            Log.e(TAG, "Error removing post reference: $it")
+            showToast(context, "Something went wrong removing post reference")
+        }
+    }
+    fun deletePostReferenceFromDatabase(context: Context, videoData: Post) {
         val databaseRef =
             FirebaseDatabase.getInstance().getReference("posts_${videoData.language!!.code}")
         databaseRef.child(videoData.key!!).removeValue().addOnSuccessListener {
