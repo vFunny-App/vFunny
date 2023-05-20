@@ -31,7 +31,6 @@ import org.json.JSONObject
 import vfunny.shortvideovfunnyapp.BuildConfig.APPLICATION_ID
 import vfunny.shortvideovfunnyapp.BuildConfig.BUILD_TYPE
 import vfunny.shortvideovfunnyapp.LangUtils.LangManager
-import vfunny.shortvideovfunnyapp.Live.di.MainModule
 import vfunny.shortvideovfunnyapp.Login.Loginutils.AuthManager
 import vfunny.shortvideovfunnyapp.Login.model.User
 import vfunny.shortvideovfunnyapp.Post.PostUtils.PostsManager
@@ -157,7 +156,7 @@ abstract class BaseActivity : AppCompatActivity() {
                     var languageList = Language.getAllLanguages()
                     if (!dataSnapshot.exists()) {
                         Log.e(TAG, "user not in database")
-                        AuthManager.getInstance().completeAuth(this@BaseActivity)
+                        AuthManager.getInstance().completeAuth()
                     } else {
                         val user: User? = dataSnapshot.getValue(User::class.java)
                         user?.id = User.currentKey()
@@ -200,10 +199,7 @@ abstract class BaseActivity : AppCompatActivity() {
                             showEmptyVideos()
                             return@launch
                         }
-                        Log.d(TAG, "onDataChange: FINAL videoItemList.size ${videoItemList.size}")
-                        val module = MainModule(this@BaseActivity, videoItemList)
-                        supportFragmentManager.fragmentFactory = module.fragmentFactory
-                        showVideos()
+                        showVideos(videoItemList)
                     }
                 }
 
@@ -222,7 +218,7 @@ abstract class BaseActivity : AppCompatActivity() {
 
     abstract fun addAdminButtons()
 
-    abstract fun showVideos()
+    abstract fun showVideos(videoItemList: ArrayList<VideoData>)
     abstract fun showEmptyVideos()
 
     override fun onRequestPermissionsResult(
@@ -259,7 +255,7 @@ abstract class BaseActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == AuthManager.REQUEST_AUTH_CODE) {
             if (resultCode == RESULT_OK) {
-                AuthManager.getInstance().completeAuth(this)
+                AuthManager.getInstance().completeAuth()
                 val intent = Intent(this, MainActivity::class.java)
                 intent.putExtra("showLanguage", true)
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)

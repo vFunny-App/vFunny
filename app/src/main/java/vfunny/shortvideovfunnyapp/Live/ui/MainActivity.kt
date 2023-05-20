@@ -11,8 +11,10 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.commit
 import androidx.fragment.app.replace
 import com.google.firebase.database.*
+import com.player.models.VideoData
 import com.videopager.ui.VideoPagerFragment
 import vfunny.shortvideovfunnyapp.Lang.ui.LangListActivity
+import vfunny.shortvideovfunnyapp.Live.di.MainModule
 import vfunny.shortvideovfunnyapp.Live.ui.list.ListActivity
 import vfunny.shortvideovfunnyapp.Live.ui.migrate.MigrateListActivity
 import vfunny.shortvideovfunnyapp.Login.Loginutils.AuthManager
@@ -163,7 +165,10 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
         binding.updateNotification.setOnClickListener { showUpdateNotificationConfirmationDialog() }
     }
 
-    override fun showVideos() {
+    override fun showVideos(videoItemList: ArrayList<VideoData>) {
+        Log.d(TAG, "onDataChange: FINAL videoItemList.size ${videoItemList.size}")
+        val module = MainModule(this, videoItemList)
+        supportFragmentManager.fragmentFactory = module.fragmentFactory
         supportFragmentManager.commit {
             replace<VideoPagerFragment>(binding.fragmentContainer.id)
         }

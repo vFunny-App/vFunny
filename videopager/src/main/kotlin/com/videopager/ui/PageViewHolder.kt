@@ -1,7 +1,6 @@
 package com.videopager.ui
 
 import android.app.DownloadManager
-import android.app.ProgressDialog
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -11,7 +10,6 @@ import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.constraintlayout.widget.ConstraintSet
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.core.view.isVisible
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.lifecycle.lifecycleScope
@@ -30,7 +28,9 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
 import com.onesignal.OneSignal
+import com.videopager.PostManager
 import com.player.models.VideoData
 import com.player.ui.AppPlayerView
 import com.squareup.okhttp.*
@@ -99,71 +99,39 @@ internal class PageViewHolder(
         // Get necessary instances and references
         val context = itemView.context
         val storage = FirebaseStorage.getInstance()
-        val storageReference = storage.reference
-        val thumbnailRef = storage.getReferenceFromUrl(videoData.previewImageUri)
-        val videoRef = storage.getReferenceFromUrl(videoData.mediaUri)
+        var thumbnailRef: StorageReference? = null
+        var videoRef: StorageReference? = null
         // If the key or language is missing, show a toast and return early
         if (videoData.key == null || videoData.language == null) {
             Toast.makeText(context, "Can't find key or language", Toast.LENGTH_SHORT).show()
             return
+        } else if (videoData.previewImageUri.isNotEmpty()) {
+            thumbnailRef = storage.getReferenceFromUrl(videoData.previewImageUri)
         }
-        // Show a confirmation dialog to the user
-        MaterialAlertDialogBuilder(context,
-            android.R.style.Theme_Material_Dialog_Alert).setTitle("WARNING!")
-            .setMessage("Do you want to delete this item?").setPositiveButton("Yes") { dialog, _ ->
+        if (videoData.mediaUri.isNotEmpty()) {
+            videoRef = storage.getReferenceFromUrl(videoData.mediaUri)
+        }
+
+        val postManager = PostManager.instance
+
+        MaterialAlertDialogBuilder(context, android.R.style.Theme_Material_Dialog_Alert)
+            .setTitle("WARNING!")
+            .setMessage("Do you want to delete this item?")
+            .setPositiveButton("Yes") { dialog, _ ->
                 // User clicked Yes button
-                val progressDialog = ProgressDialog(context)
-                progressDialog.setTitle("Deleting...")
-                progressDialog.show()
-                // Delete the thumbnail and video files from Firebase Storage
-                val thumbnailSegments = thumbnailRef.toString().split("/")
-                val videoSegments = videoRef.toString().split("/")
-                thumbnailSegments.takeIf { it.size == 2 }?.let { segments ->
-                    val thumbnailFolderName = segments[0]
-                    val thumbnailFileName = segments[1]
-                    storageReference.child(thumbnailFolderName).child(thumbnailFileName).delete()
-                        .addOnFailureListener { e: java.lang.Exception ->
-                            Log.e(TAG, "deleteItem: thumbnailSegments error : $e")
-                            if (progressDialog.isShowing) {
-                                progressDialog.dismiss()
-                            }
-                            Toast.makeText(context, "Failed " + e.message, Toast.LENGTH_SHORT)
-                                .show()
-                        }
-                }
-                videoSegments.takeIf { it.size == 2 }?.let { segments ->
-                    val videoFolderName = segments[0]
-                    val videoFileName = segments[1]
-                    storageReference.child(videoFolderName).child(videoFileName).delete()
-                        .addOnFailureListener { e: java.lang.Exception ->
-                            Log.e(TAG, "deleteItem: videoSegments error : $e")
-                            if (progressDialog.isShowing) {
-                                progressDialog.dismiss()
-                            }
-                            Toast.makeText(context, "Failed " + e.message, Toast.LENGTH_SHORT)
-                                .show()
-                            Log.e("TAG", "Failed : " + e.message)
-                        }
-                }
-                // Remove the post reference from Firestore
-                FirebaseDatabase.getInstance().getReference("posts_${videoData.language!!.code}")
-                    .child(videoData.key!!).removeValue().addOnSuccessListener {
-                        Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show()
-                    }.addOnFailureListener {
-                        Log.e(TAG, "deleteItem: dbReference error : $it")
-                        Toast.makeText(context,
-                            "Something went wrong removing post reference",
-                            Toast.LENGTH_SHORT).show()
-                    }
-                if (progressDialog.isShowing) {
-                    progressDialog.dismiss()
-                }
-                dialog.dismiss()
-            }.setNegativeButton("No") { dialog, _ ->
+                postManager.showProgressDialog(context, "Deleting...")
+                postManager.deleteFileFromStorage(context, thumbnailRef)
+                postManager.deleteFileFromStorage(context, videoRef)
+                postManager.deletePostReferenceFromDatabase(context, videoData)
+                postManager.dismissProgressDialog(dialog)
+            }
+            .setNegativeButton("No") { dialog, _ ->
                 // User cancelled the dialog
-                dialog.dismiss()
-                Toast.makeText(context, "Cancelled", Toast.LENGTH_SHORT).show()
-            }.setCancelable(false).show()
+                postManager.dismissProgressDialog(dialog)
+                postManager.showToast(context, "Cancelled")
+            }
+            .setCancelable(false)
+            .show()
     }
 
     /**
@@ -265,7 +233,10 @@ internal class PageViewHolder(
             binding.previewImage.load(videoData.previewImageUri, imageLoader)
             binding.waShare.setOnClickListener { shareWaClick(videoData.mediaUri) }
             binding.share.setOnClickListener { shareClick(videoData.mediaUri) }
-            binding.downloadButton.setOnClickListener { startDownload(videoData.mediaUri, itemView.context) }
+            binding.downloadButton.setOnClickListener {
+                startDownload(videoData.mediaUri,
+                    itemView.context)
+            }
             binding.moreOptions.setOnClickListener {
                 moreOptionClick(videoData.mediaUri, binding.moreOptions)
             }
@@ -322,7 +293,7 @@ internal class PageViewHolder(
         }
     }
 
-    private fun startDownload(mediaUri: String, context : Context) {
+    private fun startDownload(mediaUri: String, context: Context) {
         val dateFormat = SimpleDateFormat("h_mma_ddMMMyyyy", Locale.getDefault())
         val currentTime = dateFormat.format(Date())
         val request = DownloadManager.Request(Uri.parse(mediaUri))
