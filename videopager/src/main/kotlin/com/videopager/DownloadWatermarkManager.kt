@@ -5,8 +5,10 @@ import android.content.Context
 import android.media.MediaCodecInfo
 import android.media.MediaCodecList
 import android.os.Environment
+import android.os.Looper
 import android.util.Log
 import android.webkit.MimeTypeMap
+import android.widget.Toast
 import com.arthenica.ffmpegkit.FFmpegKit
 import com.arthenica.ffmpegkit.ReturnCode
 import kotlinx.coroutines.Dispatchers
@@ -59,6 +61,8 @@ class DownloadWatermarkManager {
         val command4 = "-i \"concat:${tempVideoLogoOutputFile.absolutePath}|${temp2.absolutePath}\" -s 1280x720 -c copy -bsf:a aac_adtstoasc $outputFilePath"
 
         try {
+            Looper.prepare()
+            Toast.makeText(context, "Download Started!", Toast.LENGTH_SHORT).show()
             //Switch to IO thread as we will save a video to storage
             withContext(Dispatchers.IO) {
                 Log.e(TAG, "addWatermarkVideo: Please wait while saving video :>")
@@ -80,6 +84,8 @@ class DownloadWatermarkManager {
                                             if (ReturnCode.isSuccess(session4.returnCode)) {
                                                 Log.e(TAG, "Success Merging End Video")
                                                 kotlin.run {
+                                                    Looper.prepare()
+                                                    Toast.makeText(context, "Download Finished!", Toast.LENGTH_SHORT).show()
                                                     Log.e(TAG, "addWatermarkVideo: From UI Thread!  1")
                                                     videoAndEndFiles.deleteOnExit()
                                                     videoLogoOutputFile.deleteOnExit()
