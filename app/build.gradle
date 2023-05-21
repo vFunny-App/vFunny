@@ -27,7 +27,7 @@ android {
 
     defaultConfig {
         applicationId 'vfunny.shortvideovfunnyapp'
-        minSdkVersion 21
+        minSdkVersion 24
         targetSdkVersion 33
         versionCode 19
         versionName "7.0.3"

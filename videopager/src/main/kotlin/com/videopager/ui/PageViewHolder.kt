@@ -1,6 +1,5 @@
 package com.videopager.ui
 
-import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -30,22 +29,22 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import com.onesignal.OneSignal
-import com.videopager.PostManager
 import com.player.models.VideoData
 import com.player.ui.AppPlayerView
 import com.squareup.okhttp.*
 import com.videopager.BuildConfig.BUILD_TYPE
+import com.videopager.DownloadWatermarkManager
+import com.videopager.PostManager
 import com.videopager.R
 import com.videopager.databinding.PageItemBinding
 import com.videopager.models.AnimationEffect
 import com.videopager.models.PageEffect
 import com.videopager.models.ResetAnimationsEffect
 import com.videopager.ui.extensions.findParentById
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.IOException
-import java.text.SimpleDateFormat
 import java.util.*
 
 val ONESIGNAL_APP_ID = "0695d934-66e2-43f6-9853-dbedd55b86ca"
@@ -59,6 +58,15 @@ internal class PageViewHolder(
     private lateinit var videoData: VideoData
     private val TAG: String = "PageViewHolder"
     private val animationEffect = FadeInThenOutAnimationEffect(binding.playPause)
+
+    companion object {
+        const val WATERMARK_END =
+            "https://firebasestorage.googleapis.com/v0/b/vfunnyapp-71911.appspot.com/o/watermark_end.mp4?alt=media&token=b39bcdc4-be50-49e0-8deb-024abb32ec8f"
+        const val WATERMARK_END_SOUND =
+            "https://firebasestorage.googleapis.com/v0/b/vfunnyapp-71911.appspot.com/o/watermark_end_audio.mp4?alt=media&token=7ff3bd8e-12af-4828-9e59-cc5b50c353a5"
+        const val WATERMARK_LOGO_LINK =
+            "https://firebasestorage.googleapis.com/v0/b/vfunnyapp-71911.appspot.com/o/watermark_logo.png?alt=media&token=b6d7f2d9-d242-42b2-ae97-a85c82d19647"
+    }
 
     init {
         binding.root.setOnClickListener { click() }
@@ -221,6 +229,7 @@ internal class PageViewHolder(
         popup.show()
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     fun bind(videoData: VideoData) {
         this.videoData = videoData
         if (videoData.type?.equals("video") == true) {
@@ -235,8 +244,24 @@ internal class PageViewHolder(
             binding.waShare.setOnClickListener { shareWaClick(videoData.mediaUri) }
             binding.share.setOnClickListener { shareClick(videoData.mediaUri) }
             binding.downloadButton.setOnClickListener {
-                startDownload(videoData.mediaUri,
-                    itemView.context)
+                runBlocking {
+                    //Run converting process in a new thread as rendering is intense process for main thread
+                    withContext(newSingleThreadContext("Converting"))
+                    {
+                        //Check again for external storage permission if android API >= 30
+                        DownloadWatermarkManager.instance.addWatermarkVideo2(videoData.mediaUri,
+                            WATERMARK_LOGO_LINK,
+                            WATERMARK_END_SOUND,
+                            itemView.context)
+
+                    }
+                }
+//                DownloadWatermarkManager.instance.addWatermarkToVideo(videoData.mediaUri,
+//                    WATERMARK_END_SOUND,
+//                    itemView.context)
+//                DownloadWatermarkManager.instance.addWatermarkToVideo(videoData.mediaUri,
+//                    WATERMARK_END,
+//                    itemView.context)
             }
             binding.moreOptions.setOnClickListener {
                 moreOptionClick(videoData.mediaUri, binding.moreOptions)
@@ -292,18 +317,6 @@ internal class PageViewHolder(
             binding.adContainer.visibility = View.VISIBLE
             refreshAd(binding.adContainer)
         }
-    }
-
-    private fun startDownload(mediaUri: String, context: Context) {
-        val dateFormat = SimpleDateFormat("h_mma_ddMMMyyyy", Locale.getDefault())
-        val currentTime = dateFormat.format(Date())
-        val request = DownloadManager.Request(Uri.parse(mediaUri))
-            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            .setTitle("Vfunny_$currentTime")
-        val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        downloadManager.enqueue(request)
-        Toast.makeText(context, "Download started", Toast.LENGTH_SHORT).show()
-        // You can save the downloadId if you need to later reference the download
     }
 
     /**
