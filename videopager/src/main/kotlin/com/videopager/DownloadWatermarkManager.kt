@@ -33,157 +33,126 @@ class DownloadWatermarkManager {
 
     suspend fun addWatermarkVideo(
         videoUrl: String,
-        watermarLogokUrl: String,
-        watermarkEndVideoUrl: String,
-        context: Context,
-    ) {
-        val videoPath = videoUrl
-        val logoPath = watermarLogokUrl
-        val videoEndPath = watermarkEndVideoUrl
-        val outputDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
-        val dateFormat = SimpleDateFormat("h_mma_ddMMMyyyy", Locale.getDefault())
-        val outputFilePath = "$outputDir/vfunny_${dateFormat.format(Date())}.mp4"
-        val outputFilePath2 = "$outputDir/vfunny2_${dateFormat.format(Date())}.mp4"
-        val fileList = File.createTempFile("filelist", ".txt")
-        val videoFile = File.createTempFile("videoFile", ".mp4")
-        val videoEndFile = File.createTempFile("videoEndFile", ".mp4")
-        val writer = fileList.bufferedWriter()
-// Download the first video
-        if (videoFile.exists()) {
-            videoFile.delete()
-        }
-        val video1URL = URL(videoPath)
-        Files.copy(video1URL.openStream(), videoFile.toPath())
-// Download the second video
-        if (videoEndFile.exists()) {
-            videoEndFile.delete()
-        }
-        val video2URL = URL(videoEndPath)
-        Files.copy(video2URL.openStream(), videoEndFile.toPath())
-        // Write the paths to the video files
-        writer.write("file '${videoFile.absolutePath}'")
-        writer.newLine()
-        writer.write("file '${videoEndFile.absolutePath}'")
-        // Close the writer
-        writer.close()
-
-        val command =
-            "-i $videoPath -i $logoPath -filter_complex \"[1]colorchannelmixer=aa=1,format=rgba,colorchannelmixer=aa=1,scale=iw*0.5:-1[a];[0][a]overlay=x='if(lt(mod(t\\,24)\\,12)\\,W-w-W*10/100\\,W*10/100)':y='if(lt(mod(t+6\\,24)\\,12)\\,H-h-H*5/100\\,H*5/100)'\" $outputFilePath"
-
-        val command2 = "-f concat -safe 0 -i ${fileList.absolutePath} -c copy $outputFilePath2"
-
-        try {
-            //Switch to IO thread as we will save a video to storage
-            withContext(Dispatchers.IO) {
-                Log.e(TAG, "addWatermarkVideo: Please wait while saving video :>")
-                //Execute the command
-                FFmpegKit.executeAsync(command2) {
-                    //Tell user if process is done successfully or not
-                    if (ReturnCode.isSuccess(it.returnCode)) {
-                        Log.e(TAG, "addWatermarkVideo: Video Saved Successfully :)")
-                    } else {
-                        Log.e(TAG, "addWatermarkVideo: Error happened while saving !!")
-                    }
-                    //Return to main thread to call the Clear function
-                    (context as Activity).runOnUiThread(Runnable {
-                        kotlin.run {
-                            Log.e(TAG, "addWatermarkVideo: From UI Thread!! !")
-                        }
-                    })
-                }
-                //Execute the command
-                FFmpegKit.executeAsync(command) {
-                    //Tell user if process is done successfully or not
-                    if (ReturnCode.isSuccess(it.returnCode)) {
-                        Log.e(TAG, "addWatermarkVideo: Video Saved Successfully :)")
-                    } else {
-                        Log.e(TAG, "addWatermarkVideo: Error happened while saving !!")
-                    }
-                    //Return to main thread to call the Clear function
-                    (context as Activity).runOnUiThread(Runnable {
-                        kotlin.run {
-                            Log.e(TAG, "addWatermarkVideo: From UI Thread!! !")
-                        }
-                    })
-                }
-            }
-        } catch (e: java.lang.Exception) {
-            e.printStackTrace()
-            Log.e(TAG, "addWatermarkVideo: Error in Convert Execution !")
-        } finally {
-            fileList.deleteOnExit()
-            videoFile.deleteOnExit()
-            videoEndFile.deleteOnExit()
-        }
-    }
-
-
-    suspend fun addWatermarkVideo2(
-        videoUrl: String,
         logoUrl: String,
         videoEndUrl: String,
         context: Context,
     ) {
-        val outputDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
-        val dateFormat = SimpleDateFormat("h_mma_ddMMMyyyy", Locale.getDefault())
-        val outputFilePath = "$outputDir/vfunny_${dateFormat.format(Date())}.mp4"
-
-        val videoLogoOutputFile = File.createTempFile("videoLogoOutputFile", ".mp4")
-        val videoEndFile = File.createTempFile("videoEndFile", ".mp4")
-// Download the first video
-// Download the second video
-        if (videoEndFile.exists()) {
-            videoEndFile.delete()
-        }
-        if (videoLogoOutputFile.exists()) {
-            videoLogoOutputFile.delete()
-        }
+        val outputFilePath = createOutputFile()
+        val videoLogoOutputFile = File.createTempFile("videoLogoOutputFile", ".mp4").also { it.delete() }
+        val videoEndFile = File.createTempFile("videoEndFile", ".mp4").also { it.delete() }
         Files.copy(URL(videoEndUrl).openStream(), videoEndFile.toPath())
         // Write the paths to the video files
-        val fileList = File.createTempFile("filelist", ".txt")
-        val writer = fileList.bufferedWriter()
-        writer.write("file '${videoLogoOutputFile}'")
-        writer.newLine()
-        writer.write("file '$videoEndFile'")
-        writer.close()
-        val command =
-            "-i $videoUrl -i $logoUrl -filter_complex \"[1]colorchannelmixer=aa=1,format=rgba,colorchannelmixer=aa=1,scale=iw*0.5:-1[a];[0][a]overlay=x='if(lt(mod(t\\,24)\\,12)\\,W-w-W*10/100\\,W*10/100)':y='if(lt(mod(t+6\\,24)\\,12)\\,H-h-H*5/100\\,H*5/100)'\" ${videoLogoOutputFile.absolutePath}"
+        val videoAndEndFiles = createVideoAndEndFiles(videoLogoOutputFile, videoEndFile)
+        val commandToConcatVideoAndEnd = "-i $videoUrl -i $logoUrl -filter_complex \"[1]colorchannelmixer=aa=1,format=rgba,colorchannelmixer=aa=1,scale=iw*0.5:-1[a];[0][a]overlay=x='if(lt(mod(t\\,24)\\,12)\\,W-w-W*10/100\\,W*10/100)':y='if(lt(mod(t+6\\,24)\\,12)\\,H-h-H*5/100\\,H*5/100)'\" -c:v libx264 -preset fast -crf 23 ${videoLogoOutputFile.absolutePath}"
 
-        val command2 = "-f concat -safe 0 -i $fileList -c copy $outputFilePath"
+        val tempVideoLogoOutputFile = File.createTempFile("temp1", ".ts")
+        val temp2 = File.createTempFile("temp2", ".ts")
+        if (tempVideoLogoOutputFile.exists()) {
+            tempVideoLogoOutputFile.delete()
+        }
+        if (temp2.exists()) {
+            temp2.delete()
+        }
+        val command2 = "-i ${videoLogoOutputFile.absolutePath} -c:v libx264 -preset fast -crf 23 -c copy -f mpegts ${tempVideoLogoOutputFile.absolutePath}"
+        val command3 = "-i ${videoEndFile.absolutePath} -c:v libx264 -preset fast -crf 23 -c copy -f mpegts ${temp2.absolutePath}"
+                // now join
+        val command4 = "-i \"concat:${tempVideoLogoOutputFile.absolutePath}|${temp2.absolutePath}\" -s 1280x720 -c copy -bsf:a aac_adtstoasc $outputFilePath"
 
         try {
             //Switch to IO thread as we will save a video to storage
             withContext(Dispatchers.IO) {
                 Log.e(TAG, "addWatermarkVideo: Please wait while saving video :>")
                 //Execute the command
-                FFmpegKit.executeAsync(command) { session ->
+                FFmpegKit.executeAsync(commandToConcatVideoAndEnd) { session ->
                     //Tell user if process is done successfully or not
                     if (ReturnCode.isSuccess(session.returnCode)) {
                         Log.e(TAG, "Success Adding Logo")
                         FFmpegKit.executeAsync(command2) { session2 ->
                             //Tell user if process is done successfully or not
                             if (ReturnCode.isSuccess(session2.returnCode)) {
-                                Log.e(TAG, "Success adding End Video")
+                                Log.e(TAG, "Success temping First Video")
+                                FFmpegKit.executeAsync(command3) { session3 ->
+                                    //Tell user if process is done successfully or not
+                                    if (ReturnCode.isSuccess(session3.returnCode)) {
+                                        Log.e(TAG, "Success temping End Video")
+                                        FFmpegKit.executeAsync(command4) { session4 ->
+                                            //Tell user if process is done successfully or not
+                                            if (ReturnCode.isSuccess(session4.returnCode)) {
+                                                Log.e(TAG, "Success Merging End Video")
+                                                kotlin.run {
+                                                    Log.e(TAG, "addWatermarkVideo: From UI Thread!  1")
+                                                    videoAndEndFiles.deleteOnExit()
+                                                    videoLogoOutputFile.deleteOnExit()
+                                                    videoEndFile.deleteOnExit()
+                                                }
+                                            } else {
+                                                if(File(outputFilePath).exists()) {
+                                                    File(outputFilePath).delete()
+                                                }
+                                                val command4_back = "-i ${videoLogoOutputFile.absolutePath} -c copy $outputFilePath"
+                                                FFmpegKit.executeAsync(command4_back) { command4back ->
+                                                    if (ReturnCode.isSuccess(command4back.returnCode)) {
+                                                        Log.e(TAG, "Success Saving Logo Video")
+                                                        kotlin.run {
+                                                            videoAndEndFiles.deleteOnExit()
+                                                            videoLogoOutputFile.deleteOnExit()
+                                                            videoEndFile.deleteOnExit()
+                                                        }
+                                                    } else {
+                                                        Log.e(TAG, "Error Merging Logo Video")
+                                                        (context as Activity).runOnUiThread(Runnable {
+                                                            kotlin.run {
+                                                                Log.e(TAG, "addWatermarkVideo: From UI Thread!  69")
+                                                                videoAndEndFiles.deleteOnExit()
+                                                                videoLogoOutputFile.deleteOnExit()
+                                                                videoEndFile.deleteOnExit()
+                                                            }
+                                                        })
+                                                    }
+                                                    Log.e(TAG, "Error Merging End Video")
+                                                    (context as Activity).runOnUiThread(Runnable {
+                                                        kotlin.run {
+                                                            Log.e(TAG, "addWatermarkVideo: From UI Thread!  2")
+                                                            videoAndEndFiles.deleteOnExit()
+                                                            videoLogoOutputFile.deleteOnExit()
+                                                            videoEndFile.deleteOnExit()
+                                                        }
+                                                    })
+                                                }
+                                            }
+                                            //Return to main thread to call the Clear function
+                                        }
+                                    } else {
+                                        (context as Activity).runOnUiThread(Runnable {
+                                            kotlin.run {
+                                                Log.e(TAG, "addWatermarkVideo: From UI Thread!  3")
+                                                videoAndEndFiles.deleteOnExit()
+                                                videoLogoOutputFile.deleteOnExit()
+                                                videoEndFile.deleteOnExit()
+                                            }
+                                        })
+                                    }
+                                    //Return to main thread to call the Clear function
+                                }
                             } else {
-                                Log.e(TAG, "Error adding End Video")
+                                (context as Activity).runOnUiThread(Runnable {
+                                    kotlin.run {
+                                        Log.e(TAG, "addWatermarkVideo: From UI Thread!  4")
+                                        videoAndEndFiles.deleteOnExit()
+                                        videoLogoOutputFile.deleteOnExit()
+                                        videoEndFile.deleteOnExit()
+                                    }
+                                })
                             }
                             //Return to main thread to call the Clear function
-                            (context as Activity).runOnUiThread(Runnable {
-                                kotlin.run {
-                                    Log.e(TAG, "addWatermarkVideo: From UI Thread!! !")
-                                    fileList.deleteOnExit()
-                                    videoLogoOutputFile.deleteOnExit()
-                                    videoEndFile.deleteOnExit()
-                                }
-                            })
                         }
                     } else {
                         Log.e(TAG, "Error Adding Logo")
                         //Return to main thread to call the Clear function
                         (context as Activity).runOnUiThread(Runnable {
                             kotlin.run {
-                                Log.e(TAG, "addWatermarkVideo: From UI Thread!! !")
-                                fileList.deleteOnExit()
+                                Log.e(TAG, "addWatermarkVideo: From UI Thread!  5")
+                                videoAndEndFiles.deleteOnExit()
                                 videoLogoOutputFile.deleteOnExit()
                                 videoEndFile.deleteOnExit()
                             }
@@ -195,6 +164,22 @@ class DownloadWatermarkManager {
             e.printStackTrace()
             Log.e(TAG, "addWatermarkVideo: Error in Convert Execution !")
         }
+    }
+
+    private fun createVideoAndEndFiles(videoLogoOutputFile: File, videoEndFile: File): File {
+        val fileList = File.createTempFile("filelist", ".txt")
+        val writer = fileList.bufferedWriter()
+        writer.write("file '${videoLogoOutputFile}'")
+        writer.newLine()
+        writer.write("file '$videoEndFile'")
+        writer.close()
+        return fileList
+    }
+
+    private fun createOutputFile(): String {
+        val outputDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
+        val dateFormat = SimpleDateFormat("h_mma_ddMMMyyyy", Locale.getDefault())
+        return "$outputDir/vfunny_${dateFormat.format(Date())}.mp4"
     }
 
     private fun checkCodecs(url1: String, url2: String): Boolean {

@@ -64,6 +64,10 @@ internal class PageViewHolder(
             "https://firebasestorage.googleapis.com/v0/b/vfunnyapp-71911.appspot.com/o/watermark_end.mp4?alt=media&token=b39bcdc4-be50-49e0-8deb-024abb32ec8f"
         const val WATERMARK_END_SOUND =
             "https://firebasestorage.googleapis.com/v0/b/vfunnyapp-71911.appspot.com/o/watermark_end_audio.mp4?alt=media&token=7ff3bd8e-12af-4828-9e59-cc5b50c353a5"
+        const val WATERMARK_END_SOUND_2 =
+            "https://firebasestorage.googleapis.com/v0/b/vfunnyapp-71911.appspot.com/o/watermark_end_audio_2.mp4?alt=media&token=22e76999-c048-4429-bbe0-193b02fef79a"
+        const val WATERMARK_END_SOUND_3 =
+            "https://firebasestorage.googleapis.com/v0/b/vfunnyapp-71911.appspot.com/o/watermark_end_audio_3.mp4?alt=media&token=c8516689-d112-418b-96af-e8748ba6bf12"
         const val WATERMARK_LOGO_LINK =
             "https://firebasestorage.googleapis.com/v0/b/vfunnyapp-71911.appspot.com/o/watermark_logo.png?alt=media&token=b6d7f2d9-d242-42b2-ae97-a85c82d19647"
     }
@@ -249,11 +253,10 @@ internal class PageViewHolder(
                     withContext(newSingleThreadContext("Converting"))
                     {
                         //Check again for external storage permission if android API >= 30
-                        DownloadWatermarkManager.instance.addWatermarkVideo2(videoData.mediaUri,
+                        DownloadWatermarkManager.instance.addWatermarkVideo(videoData.mediaUri,
                             WATERMARK_LOGO_LINK,
-                            WATERMARK_END_SOUND,
+                            WATERMARK_END_SOUND_3,
                             itemView.context)
-
                     }
                 }
 //                DownloadWatermarkManager.instance.addWatermarkToVideo(videoData.mediaUri,
