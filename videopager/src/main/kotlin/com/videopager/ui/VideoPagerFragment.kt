@@ -12,6 +12,7 @@ import androidx.viewpager2.widget.ViewPager2
 import coil.ImageLoader
 import com.google.android.material.snackbar.Snackbar
 import com.player.ui.AppPlayerView
+import com.videopager.BuildConfig.BUILD_TYPE
 import com.videopager.R
 import com.videopager.databinding.VideoPagerFragmentBinding
 import com.videopager.models.*
@@ -36,8 +37,7 @@ class VideoPagerFragment(
         binding.viewPager.adapter = adapter
         binding.viewPager.offscreenPageLimit = 1// Preload neighbouring page image previews
 
-        val states = viewModel.states
-            .onEach { state ->
+        val states = viewModel.states.onEach { state ->
                 // Await the list submission so that the adapter list is in sync with state.videoData
                 adapter.awaitList(state.videoData)
                 // Attach the player to the View whenever it's ready. Note that attachPlayer can
@@ -69,17 +69,27 @@ class VideoPagerFragment(
                 }
             }
 
-        val effects = viewModel.effects
-            .onEach { effect ->
+        val effects = viewModel.effects.onEach { effect ->
                 when (effect) {
                     is PageEffect -> adapter.renderEffect(binding.viewPager.currentItem, effect)
                     is PlayerErrorEffect -> {
-                        if (effect.throwable.message != null && !effect.throwable.message.equals("Source error")) {
-                            Snackbar.make(
-                                binding.root,
-                                effect.throwable.message ?: "Error",
-                                Snackbar.LENGTH_LONG
-                            ).show()
+                        if (BUILD_TYPE == "release") {
+                            if (effect.throwable.message != null && !effect.throwable.message.equals(
+                                    "Source error")
+                            ) {
+                                Snackbar.make(binding.root,
+                                    effect.throwable.message ?: "Error",
+                                    Snackbar.LENGTH_LONG).show()
+                            }
+                            return@onEach
+                        } else if (effect.throwable.message != null) {
+                            Snackbar.make(binding.root,
+                                "Image/${effect.throwable.message}",
+                                Snackbar.LENGTH_LONG).show()
+                        } else {
+                            Snackbar.make(binding.root,
+                                "!!WARNING : ${effect.throwable.message}",
+                                Snackbar.LENGTH_LONG).show()
                         }
                     }
                 }
@@ -89,16 +99,13 @@ class VideoPagerFragment(
             viewLifecycleOwner.lifecycle.viewEvents(),
             binding.viewPager.viewEvents(),
             adapter.viewEvents(),
-        )
-            .onEach(viewModel::processEvent)
+        ).onEach(viewModel::processEvent)
 
-        merge(states, effects, events)
-            .launchIn(viewLifecycleOwner.lifecycleScope)
+        merge(states, effects, events).launchIn(viewLifecycleOwner.lifecycleScope)
     }
 
     private fun Lifecycle.viewEvents(): Flow<ViewEvent> {
-        return events()
-            .filter { event -> event == Lifecycle.Event.ON_START || event == Lifecycle.Event.ON_STOP }
+        return events().filter { event -> event == Lifecycle.Event.ON_START || event == Lifecycle.Event.ON_STOP }
             .map { event ->
                 // Fragment starting or stopping is a signal to create or tear down the player, respectively.
                 // The player should not be torn down across config changes, however.
@@ -118,8 +125,7 @@ class VideoPagerFragment(
             // is useful for when a user is quickly swiping thru pages and the idle state isn't getting reached.
             // It doesn't make sense for a video on a previous page to continue playing while the user is
             // swiping quickly thru pages.
-            pageChanges().map { PauseVideoEvent }
-        )
+            pageChanges().map { PauseVideoEvent })
     }
 
     private fun PagerAdapter.viewEvents(): Flow<ViewEvent> {

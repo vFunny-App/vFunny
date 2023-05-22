@@ -12,6 +12,31 @@
         android:layout_height="match_parent"
         android:visibility="gone" />
 
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/empty_views_lyt"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/fragment_container"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            style="@android:style/Widget.Material.EditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_gradient"
+            android:textColor="@color/white"
+            android:text="No Videos Available\n Please try again later"
+            android:textAlignment="center"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.2" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/loading_lyt"
         android:layout_width="match_parent"
@@ -46,15 +71,69 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/LangListBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/migratelistBtn"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="@dimen/fui_auth_method_button_margin"
+        android:layout_marginTop="@dimen/fui_auth_method_button_margin"
+        android:layout_marginEnd="@dimen/fui_auth_method_button_margin"
+        android:backgroundTint="#B7B7B7"
+        android:contentDescription="add"
+        app:backgroundTint="@color/app_color"
+        app:tint="@android:color/black"
+        android:src="@android:drawable/ic_dialog_dialer" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/migratelistBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/listBtn"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="@dimen/fui_auth_method_button_margin"
+        android:layout_marginTop="@dimen/fui_auth_method_button_margin"
+        android:layout_marginEnd="@dimen/fui_auth_method_button_margin"
+        android:backgroundTint="#B7B7B7"
+        android:contentDescription="add"
+        app:maxImageSize="40dp"
+        app:backgroundTint="@color/app_color"
+        app:tint="@android:color/black"
+        android:src="@android:drawable/ic_menu_directions" />
+
+
+    <ImageView
+        android:id="@+id/setLanguageBtn"
+        style="?android:borderlessButtonStyle"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="10dp"
+        android:background="@drawable/btn_bg"
+        android:contentDescription="set Language"
+        android:src="@mipmap/ic_lang_select_foreground"
+        android:scaleType="fitXY"
+        app:tint="@android:color/white" />
+
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/listBtn"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_alignParentStart="true"
         android:layout_alignParentBottom="true"
-        android:layout_margin="@dimen/fui_auth_method_button_margin"
+        android:layout_marginStart="@dimen/fui_auth_method_button_margin"
+        android:layout_marginTop="@dimen/fui_auth_method_button_margin"
+        android:layout_marginEnd="@dimen/fui_auth_method_button_margin"
+        android:layout_marginBottom="@dimen/fui_auth_method_button_margin"
         android:backgroundTint="#B7B7B7"
         android:contentDescription="add"
-        android:src="@android:drawable/ic_menu_save" />
+        app:maxImageSize="40dp"
+        app:backgroundTint="@color/app_color"
+        app:tint="@android:color/black"
+        android:src="?android:attr/actionModeFindDrawable" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/addBtn"

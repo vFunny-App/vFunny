@@ -54,7 +54,8 @@
         android:background="@drawable/btn_bg_danger"
         android:src="@android:drawable/ic_menu_delete"
         app:layout_constraintBottom_toTopOf="@+id/send_noti"
-        app:layout_constraintEnd_toEndOf="@+id/player_container" />
+        app:layout_constraintEnd_toEndOf="@+id/player_container"
+        style="?android:borderlessButtonStyle" />
 
     <ImageView
         android:id="@+id/send_noti"
@@ -73,8 +74,16 @@
         android:layout_height="45dp"
         android:layout_margin="5dp"
         android:src="@drawable/whatsapp_icon"
-        app:layout_constraintBottom_toTopOf="@+id/share"
+        app:layout_constraintBottom_toTopOf="@+id/center"
         app:layout_constraintEnd_toEndOf="@+id/player_container" />
+
+    <View
+        android:id="@+id/center"
+        android:layout_width="1dp"
+        android:layout_height="0.1dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
         android:id="@+id/share"
@@ -84,9 +93,21 @@
         android:background="@drawable/btn_bg"
         android:padding="8dp"
         android:src="@drawable/share"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/center"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        style="?android:borderlessButtonStyle"/>
+
+    <ImageView
+        android:id="@+id/download_button"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
+        android:layout_margin="5dp"
+        android:background="@drawable/btn_bg"
+        android:padding="5dp"
+        android:src="@android:drawable/stat_sys_download"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/share"
+        style="?android:borderlessButtonStyle"/>
 
     <ImageView
         android:id="@+id/more_options"
@@ -97,7 +118,25 @@
         android:padding="5dp"
         android:src="@drawable/show_more"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/share" />
+        app:layout_constraintTop_toBottomOf="@+id/download_button"
+        style="?android:borderlessButtonStyle" />
+
+
+    <TextView
+        android:id="@+id/infoAdmin"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="5dp"
+        android:padding="5dp"
+        android:src="@drawable/show_more"
+        android:gravity="center"
+        android:background="#f4b400"
+        android:textStyle="bold"
+        android:textColor="#000"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:visibility="gone"/>
+
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

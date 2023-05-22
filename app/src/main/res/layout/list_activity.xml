@@ -4,7 +4,20 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".Live.ui.ListActivity">
+    tools:context=".Live.ui.list.ListActivity">
+
+    <TextView
+        android:id="@+id/header_txt"
+        android:layout_width="match_parent"
+        android:layout_height="?actionBarSize"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:text="REALTIME LIST PAGE"
+        android:gravity="center"
+        android:background="@color/app_color"
+        android:textAppearance="?actionMenuTextAppearance"
+        android:textStyle="bold"
+        android:textColor="@color/black"/>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/mRecyclerView"
@@ -14,7 +27,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/header_txt"
         tools:listitem="@layout/item_list" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

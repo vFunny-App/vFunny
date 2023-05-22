@@ -19,10 +19,6 @@ android {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
-        debug {
-            minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
         admin {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
@@ -47,8 +43,9 @@ android {
 
 dependencies {
     implementation project(":player")
+    testImplementation 'junit:junit:4.13.2'
 
-    implementation "com.google.android.exoplayer:exoplayer:2.18.1"
+    implementation "com.google.android.exoplayer:exoplayer:2.18.6"
 
     implementation 'io.github.java-diff-utils:java-diff-utils:4.12'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4'

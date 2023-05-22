@@ -19,10 +19,6 @@ android {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
-        debug {
-            minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
         admin {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
@@ -46,6 +42,7 @@ android {
 
 dependencies {
     implementation project(":player")
+    testImplementation 'junit:junit:4.13.2'
 
     implementation 'androidx.core:core-ktx:1.8.0'
     implementation 'androidx.appcompat:appcompat:1.5.0'
@@ -71,5 +68,5 @@ dependencies {
     /** START - Google Play Builds **/
     implementation 'com.onesignal:OneSignal:4.8.2'
     /** END - Google Play Builds **/
-
+    implementation 'com.arthenica:ffmpeg-kit-full-gpl:5.1'
 }

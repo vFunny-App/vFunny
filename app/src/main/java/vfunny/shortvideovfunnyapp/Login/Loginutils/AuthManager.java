@@ -1,6 +1,6 @@
 package vfunny.shortvideovfunnyapp.Login.Loginutils;
 
-import static vfunny.shortvideovfunnyapp.Login.data.Const.kTopicsFeed;
+import static vfunny.shortvideovfunnyapp.Post.model.Const.kTopicsFeed;
 
 import android.app.Activity;
 import android.content.Context;
@@ -10,7 +10,6 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 
 import com.firebase.ui.auth.AuthUI;
-import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -24,7 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import vfunny.shortvideovfunnyapp.Login.data.User;
+import vfunny.shortvideovfunnyapp.Login.model.User;
 import vfunny.shortvideovfunnyapp.R;
 
 /**
@@ -44,6 +43,7 @@ public class AuthManager implements FirebaseAuth.AuthStateListener {
         return _shared;
     }
 
+
     public void showLogin(Activity activity) {
         // Check if user is signed in (non-null) and update UI accordingly.
         FirebaseAuth auth = FirebaseAuth.getInstance();
@@ -51,17 +51,17 @@ public class AuthManager implements FirebaseAuth.AuthStateListener {
         if (auth.getCurrentUser() != null) {
             // subscribe for new notifications
             FirebaseMessaging.getInstance().subscribeToTopic(kTopicsFeed + User.currentKey());
-            final String locale = activity.getApplicationContext().getResources().getConfiguration().locale.getLanguage();
+            String locale = activity.getApplicationContext().getResources().getConfiguration().locale.getLanguage();
             User.current().child("lang").setValue(locale); // update lang configuration
         } else {
-            final List providers = Arrays.asList(
+            List providers = Arrays.asList(
                     new AuthUI.IdpConfig.EmailBuilder().build(),
                     new AuthUI.IdpConfig.GoogleBuilder().build(),
                     new AuthUI.IdpConfig.PhoneBuilder().setDefaultCountryIso("IN").build()
             );
 
-            final String eula = activity.getString(R.string.eula);
-            final String privacy = activity.getString(R.string.privacy_policy);
+            String eula = activity.getString(R.string.eula);
+            String privacy = activity.getString(R.string.privacy_policy);
 
             // show sign-in dialog
             Intent intent = AuthUI.getInstance()
@@ -76,21 +76,17 @@ public class AuthManager implements FirebaseAuth.AuthStateListener {
         }
     }
 
-    public void completeAuth(final Context context) {
-        final FirebaseUser fbuser = FirebaseAuth.getInstance().getCurrentUser();
-        final DatabaseReference ref = FirebaseDatabase.getInstance().getReference("users").child(fbuser.getUid());
+    public void completeAuth() {
+        FirebaseUser fbuser = FirebaseAuth.getInstance().getCurrentUser();
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("users").child(fbuser.getUid());
         // subscribe for new notifications
         FirebaseMessaging.getInstance().subscribeToTopic(kTopicsFeed + User.currentKey());
         ref.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                Bundle bundle = new Bundle();
-                FirebaseAnalytics analytics = FirebaseAnalytics.getInstance(context);
                 User user;
                 // store user info if user not exist yet
                 if (!dataSnapshot.exists() || dataSnapshot.child("name").getValue() == null) {
-                    bundle.putString(FirebaseAnalytics.Param.ITEM_ID, fbuser.getUid());
-                    bundle.putString(FirebaseAnalytics.Param.ITEM_NAME, fbuser.getDisplayName());
                     user = new User();
                     user.setName(fbuser.getDisplayName());
                     if (fbuser.getPhotoUrl() != null) {
@@ -99,8 +95,6 @@ public class AuthManager implements FirebaseAuth.AuthStateListener {
                     ref.setValue(user);
                 } else {
                     user = dataSnapshot.getValue(User.class);
-                    bundle.putString(FirebaseAnalytics.Param.ITEM_ID, user.getId());
-                    bundle.putString(FirebaseAnalytics.Param.ITEM_NAME, user.getName());
                 }
 
                 for (AuthListener listener : mListeners) {
