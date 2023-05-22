@@ -29,8 +29,8 @@ android {
         applicationId 'vfunny.shortvideovfunnyapp'
         minSdkVersion 24
         targetSdkVersion 33
-        versionCode 19
-        versionName "7.0.3"
+        versionCode 20
+        versionName "7.0.4"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
