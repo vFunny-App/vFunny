@@ -37,9 +37,11 @@ import com.videopager.DownloadWatermarkManager
 import com.videopager.PostManager
 import com.videopager.R
 import com.videopager.databinding.PageItemBinding
+import com.videopager.models.*
 import com.videopager.models.AnimationEffect
 import com.videopager.models.PageEffect
 import com.videopager.models.ResetAnimationsEffect
+import com.videopager.models.ViewEvent
 import com.videopager.ui.extensions.findParentById
 import kotlinx.coroutines.*
 import org.json.JSONException
@@ -53,7 +55,7 @@ val REST_API_KEY = "MzBhMWIzODMtY2U3OC00OTlhLTkwMDEtM2UxZWExYjU5Nzg5"
 internal class PageViewHolder(
     private val binding: PageItemBinding,
     private val imageLoader: ImageLoader,
-    private val click: () -> Unit,
+    private val click: (event: Any) -> Unit,
 ) : RecyclerView.ViewHolder(binding.root) {
     private lateinit var videoData: VideoData
     private val TAG: String = "PageViewHolder"
@@ -73,7 +75,8 @@ internal class PageViewHolder(
     }
 
     init {
-        binding.root.setOnClickListener { click() }
+        binding.root.setOnClickListener { click(TappedPlayerEvent) }
+        binding.waShare.setOnClickListener { click(TappedWhatsappEvent) }
     }
 
     var currentNativeAd: NativeAd? = null
@@ -87,19 +90,6 @@ internal class PageViewHolder(
         shareMessage += url
         i.putExtra(Intent.EXTRA_TEXT, shareMessage)
         val context = itemView.context
-        context.startActivity(Intent.createChooser(i, "Share URL"))
-    }
-
-    private fun shareWaClick(url: String) {
-        val i = Intent(Intent.ACTION_SEND)
-        i.type = "text/plain"
-        i.putExtra(Intent.EXTRA_SUBJECT, "Sharing URL")
-        i.setPackage("com.whatsapp")
-        var shareMessage: String? =
-            "Download Vfunny App : https://play.google.com/store/apps/details?id=vfunny.shortvideovfunnyapp \n Watch this Video   "
-        shareMessage += url
-        i.putExtra(Intent.EXTRA_TEXT, shareMessage)
-        val context: Context = itemView.context
         context.startActivity(Intent.createChooser(i, "Share URL"))
     }
 
@@ -245,7 +235,6 @@ internal class PageViewHolder(
             binding.playPause.visibility = View.VISIBLE
             binding.adContainer.visibility = View.GONE
             binding.previewImage.load(videoData.previewImageUri, imageLoader)
-            binding.waShare.setOnClickListener { shareWaClick(videoData.mediaUri) }
             binding.share.setOnClickListener { shareClick(videoData.mediaUri) }
             binding.downloadButton.setOnClickListener {
                 runBlocking {

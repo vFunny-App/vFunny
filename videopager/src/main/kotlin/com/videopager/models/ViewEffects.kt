@@ -11,3 +11,5 @@ internal data class AnimationEffect(@DrawableRes val drawable: Int) : PageEffect
 internal object ResetAnimationsEffect : PageEffect()
 
 internal data class PlayerErrorEffect(val throwable: Throwable) : ViewEffect()
+
+internal data class  ShareWhatsappEffect(val mediaUri: String)  : ViewEffect()

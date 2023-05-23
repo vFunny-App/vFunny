@@ -19,7 +19,7 @@ internal object TearDownPlayerResult : ViewResult()
 
 internal data class TappedPlayerResult(@DrawableRes val drawable: Int) : ViewResult()
 
-internal data class TappedMuteResults(@DrawableRes val drawable: Int) : ViewResult()
+internal data class TappedWhatsappResult(val mediaUri: String) : ViewResult()
 
 internal data class OnNewPageSettledResult(val page: Int) : ViewResult()
 

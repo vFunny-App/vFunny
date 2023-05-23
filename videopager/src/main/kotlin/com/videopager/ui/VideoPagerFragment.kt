@@ -1,5 +1,6 @@
 package com.videopager.ui
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
@@ -12,7 +13,6 @@ import androidx.viewpager2.widget.ViewPager2
 import coil.ImageLoader
 import com.google.android.material.snackbar.Snackbar
 import com.player.ui.AppPlayerView
-import com.videopager.BuildConfig.BUILD_TYPE
 import com.videopager.R
 import com.videopager.databinding.VideoPagerFragmentBinding
 import com.videopager.models.*
@@ -38,62 +38,46 @@ class VideoPagerFragment(
         binding.viewPager.offscreenPageLimit = 1// Preload neighbouring page image previews
 
         val states = viewModel.states.onEach { state ->
-                // Await the list submission so that the adapter list is in sync with state.videoData
-                adapter.awaitList(state.videoData)
-                // Attach the player to the View whenever it's ready. Note that attachPlayer can
-                // be false while appPlayer is non-null during configuration changes and, conversely,
-                // attachPlayer can be true while appPlayer is null when the appPlayer hasn't been
-                // set up but the view is ready for it. That is why both are checked here.
-                if (state.attachPlayer && state.appPlayer != null) {
-                    appPlayerView.attach(state.appPlayer)
-                } else {
-                    appPlayerView.detachPlayer()
-                }
-                // Restore any saved page state from process recreation and configuration changes.
-                // Guarded by an isIdle check so that state emissions mid-swipe or during page change
-                // animations are ignored. There would have a jarring page-change effect without that.
-                if (binding.viewPager.isIdle) {
-                    binding.viewPager.setCurrentItem(state.page, false)
-                }
+            // Await the list submission so that the adapter list is in sync with state.videoData
+            adapter.awaitList(state.videoData)
+            // Attach the player to the View whenever it's ready. Note that attachPlayer can
+            // be false while appPlayer is non-null during configuration changes and, conversely,
+            // attachPlayer can be true while appPlayer is null when the appPlayer hasn't been
+            // set up but the view is ready for it. That is why both are checked here.
+            if (state.attachPlayer && state.appPlayer != null) {
+                appPlayerView.attach(state.appPlayer)
+            } else {
+                appPlayerView.detachPlayer()
+            }
+            // Restore any saved page state from process recreation and configuration changes.
+            // Guarded by an isIdle check so that state emissions mid-swipe or during page change
+            // animations are ignored. There would have a jarring page-change effect without that.
+            if (binding.viewPager.isIdle) {
+                binding.viewPager.setCurrentItem(state.page, false)
+            }
 
-                // Can't query any ViewHolders if the adapter has no pages
-                if (adapter.currentList.isNotEmpty()) {
-                    // Set the player view on the active page. Note that ExoPlayer won't render
-                    // any frames until the output view (here, appPlayerView) is on-screen
-                    adapter.attachPlayerView(appPlayerView, state.page)
+            // Can't query any ViewHolders if the adapter has no pages
+            if (adapter.currentList.isNotEmpty()) {
+                // Set the player view on the active page. Note that ExoPlayer won't render
+                // any frames until the output view (here, appPlayerView) is on-screen
+                adapter.attachPlayerView(appPlayerView, state.page)
 
-                    // If the player media is rendering frames, then show the player
-                    if (state.showPlayer) {
-                        adapter.showPlayerFor(state.page)
-                    }
+                // If the player media is rendering frames, then show the player
+                if (state.showPlayer) {
+                    adapter.showPlayerFor(state.page)
                 }
             }
+        }
 
         val effects = viewModel.effects.onEach { effect ->
-                when (effect) {
-                    is PageEffect -> adapter.renderEffect(binding.viewPager.currentItem, effect)
-                    is PlayerErrorEffect -> {
-                        if (BUILD_TYPE == "release") {
-                            if (effect.throwable.message != null && !effect.throwable.message.equals(
-                                    "Source error")
-                            ) {
-                                Snackbar.make(binding.root,
-                                    effect.throwable.message ?: "Error",
-                                    Snackbar.LENGTH_LONG).show()
-                            }
-                            return@onEach
-                        } else if (effect.throwable.message != null) {
-                            Snackbar.make(binding.root,
-                                "Image/${effect.throwable.message}",
-                                Snackbar.LENGTH_LONG).show()
-                        } else {
-                            Snackbar.make(binding.root,
-                                "!!WARNING : ${effect.throwable.message}",
-                                Snackbar.LENGTH_LONG).show()
-                        }
-                    }
-                }
+            when (effect) {
+                is PageEffect -> adapter.renderEffect(binding.viewPager.currentItem, effect)
+                is PlayerErrorEffect -> Snackbar.make(binding.root,
+                    "Image/${effect.throwable.message}",
+                    Snackbar.LENGTH_LONG).show()
+                is ShareWhatsappEffect -> shareToWhatsapp(effect.mediaUri)
             }
+        }
 
         val events = merge(
             viewLifecycleOwner.lifecycle.viewEvents(),
@@ -129,7 +113,26 @@ class VideoPagerFragment(
     }
 
     private fun PagerAdapter.viewEvents(): Flow<ViewEvent> {
-        return clicks().map { TappedPlayerEvent }
+        return clicks().map { event ->
+            when (event) {
+                is TappedPlayerEvent -> event
+                is TappedWhatsappEvent -> event
+                else -> throw IllegalArgumentException("Unknown event type: $event")
+            }
+        }
+    }
+
+
+    private fun shareToWhatsapp(url: String) {
+        val shareMessage =
+            "Download vFunny App: https://play.google.com/store/apps/details?id=vfunny.shortvideovfunnyapp\nWatch this Video $url"
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, "Sharing Video")
+            putExtra(Intent.EXTRA_TEXT, shareMessage)
+            setPackage("com.whatsapp")
+        }
+        requireContext().startActivity(Intent.createChooser(intent, "Share Video"))
     }
 
 }
