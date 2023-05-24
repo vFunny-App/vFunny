@@ -23,6 +23,8 @@ internal data class TappedWhatsappResult(val mediaUri: String) : ViewResult()
 
 internal data class TappedShareResult(val mediaUri: String) : ViewResult()
 
+internal data class TappedDownloadResult(val mediaUri: String) : ViewResult()
+
 internal data class OnNewPageSettledResult(val page: Int) : ViewResult()
 
 internal object OnPlayerRenderingResult : ViewResult()

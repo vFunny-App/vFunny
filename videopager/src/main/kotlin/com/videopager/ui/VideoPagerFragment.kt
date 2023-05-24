@@ -2,7 +2,9 @@ package com.videopager.ui
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -13,19 +15,23 @@ import androidx.viewpager2.widget.ViewPager2
 import coil.ImageLoader
 import com.google.android.material.snackbar.Snackbar
 import com.player.ui.AppPlayerView
+import com.videopager.DownloadWatermarkManager
 import com.videopager.R
 import com.videopager.databinding.VideoPagerFragmentBinding
 import com.videopager.models.*
 import com.videopager.ui.extensions.*
 import com.videopager.vm.VideoPagerViewModel
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
 class VideoPagerFragment(
     private val viewModelFactory: (SavedStateRegistryOwner) -> ViewModelProvider.Factory,
     private val appPlayerViewFactory: AppPlayerView.Factory,
     private val imageLoader: ImageLoader,
+    private val downloadManager: DownloadWatermarkManager,
 ) : Fragment(R.layout.video_pager_fragment) {
     private val viewModel: VideoPagerViewModel by viewModels { viewModelFactory(this) }
+    private lateinit var adapter: PagerAdapter
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -33,7 +39,7 @@ class VideoPagerFragment(
         // This single player view instance gets attached to the ViewHolder of the active ViewPager page
         val appPlayerView = appPlayerViewFactory.create(view.context)
 
-        val adapter = PagerAdapter(imageLoader)
+        adapter = PagerAdapter(imageLoader)
         binding.viewPager.adapter = adapter
         binding.viewPager.offscreenPageLimit = 1// Preload neighbouring page image previews
 
@@ -72,11 +78,14 @@ class VideoPagerFragment(
         val effects = viewModel.effects.onEach { effect ->
             when (effect) {
                 is PageEffect -> adapter.renderEffect(binding.viewPager.currentItem, effect)
-                is PlayerErrorEffect -> Snackbar.make(binding.root,
+                is PlayerErrorEffect -> Snackbar.make(
+                    binding.root,
                     "Image/${effect.throwable.message}",
-                    Snackbar.LENGTH_LONG).show()
+                    Snackbar.LENGTH_LONG
+                ).show()
                 is ShareWhatsappEffect -> shareToWhatsapp(effect.mediaUri)
                 is TappedShareEffect -> shareClick(effect.mediaUri)
+                is TappedDownloadEffect -> downloadVideo(effect.mediaUri)
             }
         }
 
@@ -119,15 +128,16 @@ class VideoPagerFragment(
                 is TappedPlayerEvent -> event
                 is TappedWhatsappEvent -> event
                 is TappedShareEvent -> event
+                is TappedDownloadEvent -> event
                 else -> throw IllegalArgumentException("Unknown event type: $event")
             }
         }
     }
 
 
-    private fun shareToWhatsapp(url: String) {
+    private fun shareToWhatsapp(mediaUri: String) {
         val shareMessage =
-            "Download vFunny App: https://play.google.com/store/apps/details?id=vfunny.shortvideovfunnyapp\nWatch this Video $url"
+            "Download vFunny App: https://play.google.com/store/apps/details?id=vfunny.shortvideovfunnyapp\nWatch this Video $mediaUri"
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_SUBJECT, "Sharing Video")
@@ -137,14 +147,34 @@ class VideoPagerFragment(
         requireContext().startActivity(Intent.createChooser(intent, "Share Video"))
     }
 
-    private fun shareClick(url: String) {
+    private fun shareClick(mediaUri: String) {
         val shareMessage =
-            "Download vFunny App: https://play.google.com/store/apps/details?id=vfunny.shortvideovfunnyapp\nWatch this Video $url"
+            "Download vFunny App: https://play.google.com/store/apps/details?id=vfunny.shortvideovfunnyapp\nWatch this Video $mediaUri"
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_SUBJECT, "Sharing Video")
             putExtra(Intent.EXTRA_TEXT, shareMessage)
         }
         requireContext().startActivity(Intent.createChooser(intent, "Share Video"))
+    }
+
+    private suspend fun downloadVideo(mediaUri: String) { // TODO : Maybe we can let download be at ViewModel or do it at TappedDownloadEvent??
+        var downloadProgress = -1
+        Toast.makeText(context, "Download Not Enabled, Mocking download", Toast.LENGTH_SHORT).show()
+        CoroutineScope(Dispatchers.IO).launch {
+            while (downloadProgress  < 100) {
+                Log.e("@Download", "downloadVideo BG : $downloadProgress", )
+                downloadProgress++
+                adapter.updateDownloadProgress(downloadProgress, 0)
+                if (downloadProgress == 0) {
+                    delay(5000) // Wait for approximately 500 milliseconds
+                }
+                delay(100) // Wait for approximately 500 milliseconds
+            }
+            downloadProgress=-1
+            adapter.updateDownloadProgress(downloadProgress, 0)
+//                downloadManager.addWatermarkVideo(mediaUri, requireContext())
+        }
+        Toast.makeText(context, "Download Not Enabled, Mocking download Finished", Toast.LENGTH_SHORT).show()
     }
 }

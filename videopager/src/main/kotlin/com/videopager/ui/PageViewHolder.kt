@@ -3,6 +3,9 @@ package com.videopager.ui
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -41,7 +44,6 @@ import com.videopager.models.*
 import com.videopager.models.AnimationEffect
 import com.videopager.models.PageEffect
 import com.videopager.models.ResetAnimationsEffect
-import com.videopager.models.ViewEvent
 import com.videopager.ui.extensions.findParentById
 import kotlinx.coroutines.*
 import org.json.JSONException
@@ -51,6 +53,7 @@ import java.util.*
 
 val ONESIGNAL_APP_ID = "0695d934-66e2-43f6-9853-dbedd55b86ca"
 val REST_API_KEY = "MzBhMWIzODMtY2U3OC00OTlhLTkwMDEtM2UxZWExYjU5Nzg5"
+val mainHandler = Handler(Looper.getMainLooper())
 
 internal class PageViewHolder(
     private val binding: PageItemBinding,
@@ -61,23 +64,14 @@ internal class PageViewHolder(
     private val TAG: String = "PageViewHolder"
     private val animationEffect = FadeInThenOutAnimationEffect(binding.playPause)
 
-    companion object {
-        const val WATERMARK_END =
-            "https://firebasestorage.googleapis.com/v0/b/vfunnyapp-71911.appspot.com/o/watermark_end.mp4?alt=media&token=b39bcdc4-be50-49e0-8deb-024abb32ec8f"
-        const val WATERMARK_END_SOUND =
-            "https://firebasestorage.googleapis.com/v0/b/vfunnyapp-71911.appspot.com/o/watermark_end_audio.mp4?alt=media&token=7ff3bd8e-12af-4828-9e59-cc5b50c353a5"
-        const val WATERMARK_END_SOUND_2 =
-            "https://firebasestorage.googleapis.com/v0/b/vfunnyapp-71911.appspot.com/o/watermark_end_audio_2.mp4?alt=media&token=22e76999-c048-4429-bbe0-193b02fef79a"
-        const val WATERMARK_END_SOUND_3 =
-            "https://firebasestorage.googleapis.com/v0/b/vfunnyapp-71911.appspot.com/o/watermark_end_audio_3.mp4?alt=media&token=c8516689-d112-418b-96af-e8748ba6bf12"
-        const val WATERMARK_LOGO_LINK =
-            "https://firebasestorage.googleapis.com/v0/b/vfunnyapp-71911.appspot.com/o/watermark_logo.png?alt=media&token=b6d7f2d9-d242-42b2-ae97-a85c82d19647"
-    }
-
     init {
         binding.root.setOnClickListener { click(TappedPlayerEvent) }
         binding.waShare.setOnClickListener { click(TappedWhatsappEvent) }
         binding.share.setOnClickListener { click(TappedShareEvent) }
+        binding.downloadButton.setOnClickListener { click(TappedDownloadEvent) }
+        binding.moreOptions.setOnClickListener {
+            moreOptionClick(videoData.mediaUri, binding.moreOptions)
+        }
     }
 
     var currentNativeAd: NativeAd? = null
@@ -213,7 +207,6 @@ internal class PageViewHolder(
         popup.show()
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
     fun bind(videoData: VideoData) {
         this.videoData = videoData
         if (videoData.type?.equals("video") == true) {
@@ -225,28 +218,6 @@ internal class PageViewHolder(
             binding.playPause.visibility = View.VISIBLE
             binding.adContainer.visibility = View.GONE
             binding.previewImage.load(videoData.previewImageUri, imageLoader)
-            binding.downloadButton.setOnClickListener {
-                runBlocking {
-                    //Run converting process in a new thread as rendering is intense process for main thread
-                    withContext(newSingleThreadContext("Converting"))
-                    {
-                        //Check again for external storage permission if android API >= 30
-                        DownloadWatermarkManager.instance.addWatermarkVideo(videoData.mediaUri,
-                            WATERMARK_LOGO_LINK,
-                            WATERMARK_END_SOUND_3,
-                            itemView.context)
-                    }
-                }
-//                DownloadWatermarkManager.instance.addWatermarkToVideo(videoData.mediaUri,
-//                    WATERMARK_END_SOUND,
-//                    itemView.context)
-//                DownloadWatermarkManager.instance.addWatermarkToVideo(videoData.mediaUri,
-//                    WATERMARK_END,
-//                    itemView.context)
-            }
-            binding.moreOptions.setOnClickListener {
-                moreOptionClick(videoData.mediaUri, binding.moreOptions)
-            }
 
             if (BUILD_TYPE == "admin" || BUILD_TYPE == "adminDebug") {
                 binding.deleteItem.setOnClickListener {
@@ -471,6 +442,34 @@ internal class PageViewHolder(
         Log.e(TAG, ": Updating Seen List")
         itemView.findViewTreeLifecycleOwner()?.lifecycleScope?.launch {
             setSeen(videoData)
+        }
+    }
+
+    fun downloadProgress(downloadProgress: Int) {
+        Log.e("@Download", "downloadVideo UI : $downloadProgress", )
+        mainHandler.post {
+            val progressView = binding.downloadInfoProgress
+            when (downloadProgress) {
+                0 -> {
+                    progressView.visibility = View.INVISIBLE
+                    progressView.isIndeterminate = true
+                    progressView.visibility = View.VISIBLE
+                }
+                in 1..100 -> {
+                    progressView.isIndeterminate = false
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        progressView.setProgress(downloadProgress, true)
+                    } else {
+                        progressView.progress = downloadProgress
+                    }
+                }
+                else -> {
+                    progressView.visibility = View.INVISIBLE
+                    progressView.isIndeterminate = false
+                    progressView.progress = 0
+                    progressView.visibility = View.GONE
+                }
+            }
         }
     }
 

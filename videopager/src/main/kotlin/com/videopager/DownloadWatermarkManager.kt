@@ -29,23 +29,34 @@ class DownloadWatermarkManager {
     companion object {
         private const val TAG: String = "WatermarkManager"
 
-        @JvmStatic
-        val instance: DownloadWatermarkManager by lazy { DownloadWatermarkManager() }
+        const val WATERMARK_END =
+            "https://firebasestorage.googleapis.com/v0/b/vfunnyapp-71911.appspot.com/o/watermark_end.mp4?alt=media&token=b39bcdc4-be50-49e0-8deb-024abb32ec8f"
+        const val WATERMARK_END_SOUND =
+            "https://firebasestorage.googleapis.com/v0/b/vfunnyapp-71911.appspot.com/o/watermark_end_audio.mp4?alt=media&token=7ff3bd8e-12af-4828-9e59-cc5b50c353a5"
+        const val WATERMARK_END_SOUND_2 =
+            "https://firebasestorage.googleapis.com/v0/b/vfunnyapp-71911.appspot.com/o/watermark_end_audio_2.mp4?alt=media&token=22e76999-c048-4429-bbe0-193b02fef79a"
+        const val WATERMARK_END_SOUND_3 =
+            "https://firebasestorage.googleapis.com/v0/b/vfunnyapp-71911.appspot.com/o/watermark_end_audio_3.mp4?alt=media&token=c8516689-d112-418b-96af-e8748ba6bf12"
+        const val WATERMARK_LOGO_LINK =
+            "https://firebasestorage.googleapis.com/v0/b/vfunnyapp-71911.appspot.com/o/watermark_logo.png?alt=media&token=b6d7f2d9-d242-42b2-ae97-a85c82d19647"
+
     }
 
     suspend fun addWatermarkVideo(
         videoUrl: String,
-        logoUrl: String,
-        videoEndUrl: String,
         context: Context,
     ) {
+        val logoUrl = WATERMARK_LOGO_LINK
+        val videoEndUrl = WATERMARK_END_SOUND_3
         val outputFilePath = createOutputFile()
-        val videoLogoOutputFile = File.createTempFile("videoLogoOutputFile", ".mp4").also { it.delete() }
+        val videoLogoOutputFile =
+            File.createTempFile("videoLogoOutputFile", ".mp4").also { it.delete() }
         val videoEndFile = File.createTempFile("videoEndFile", ".mp4").also { it.delete() }
         Files.copy(URL(videoEndUrl).openStream(), videoEndFile.toPath())
         // Write the paths to the video files
         val videoAndEndFiles = createVideoAndEndFiles(videoLogoOutputFile, videoEndFile)
-        val commandToConcatVideoAndEnd = "-i $videoUrl -i $logoUrl -filter_complex \"[1]colorchannelmixer=aa=1,format=rgba,colorchannelmixer=aa=1,scale=iw*0.5:-1[a];[0][a]overlay=x='if(lt(mod(t\\,24)\\,12)\\,W-w-W*10/100\\,W*10/100)':y='if(lt(mod(t+6\\,24)\\,12)\\,H-h-H*5/100\\,H*5/100)'\" -c:v libx264 -preset fast -crf 23 ${videoLogoOutputFile.absolutePath}"
+        val commandToConcatVideoAndEnd =
+            "-i $videoUrl -i $logoUrl -filter_complex \"[1]colorchannelmixer=aa=1,format=rgba,colorchannelmixer=aa=1,scale=iw*0.5:-1[a];[0][a]overlay=x='if(lt(mod(t\\,24)\\,12)\\,W-w-W*10/100\\,W*10/100)':y='if(lt(mod(t+6\\,24)\\,12)\\,H-h-H*5/100\\,H*5/100)'\" -c:v libx264 -preset fast -crf 23 ${videoLogoOutputFile.absolutePath}"
 
         val tempVideoLogoOutputFile = File.createTempFile("temp1", ".ts")
         val temp2 = File.createTempFile("temp2", ".ts")
@@ -55,10 +66,13 @@ class DownloadWatermarkManager {
         if (temp2.exists()) {
             temp2.delete()
         }
-        val command2 = "-i ${videoLogoOutputFile.absolutePath} -c:v libx264 -preset fast -crf 23 -c copy -f mpegts ${tempVideoLogoOutputFile.absolutePath}"
-        val command3 = "-i ${videoEndFile.absolutePath} -c:v libx264 -preset fast -crf 23 -c copy -f mpegts ${temp2.absolutePath}"
-                // now join
-        val command4 = "-i \"concat:${tempVideoLogoOutputFile.absolutePath}|${temp2.absolutePath}\" -s 1280x720 -c copy -bsf:a aac_adtstoasc $outputFilePath"
+        val command2 =
+            "-i ${videoLogoOutputFile.absolutePath} -c:v libx264 -preset fast -crf 23 -c copy -f mpegts ${tempVideoLogoOutputFile.absolutePath}"
+        val command3 =
+            "-i ${videoEndFile.absolutePath} -c:v libx264 -preset fast -crf 23 -c copy -f mpegts ${temp2.absolutePath}"
+        // now join
+        val command4 =
+            "-i \"concat:${tempVideoLogoOutputFile.absolutePath}|${temp2.absolutePath}\" -s 1280x720 -c copy -bsf:a aac_adtstoasc $outputFilePath"
 
         try {
             Looper.prepare()
@@ -85,17 +99,25 @@ class DownloadWatermarkManager {
                                                 Log.e(TAG, "Success Merging End Video")
                                                 kotlin.run {
                                                     Looper.prepare()
-                                                    Toast.makeText(context, "Download Finished!", Toast.LENGTH_SHORT).show()
-                                                    Log.e(TAG, "addWatermarkVideo: From UI Thread!  1")
+                                                    Toast.makeText(
+                                                        context,
+                                                        "Download Finished!",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                    Log.e(
+                                                        TAG,
+                                                        "addWatermarkVideo: From UI Thread!  1"
+                                                    )
                                                     videoAndEndFiles.deleteOnExit()
                                                     videoLogoOutputFile.deleteOnExit()
                                                     videoEndFile.deleteOnExit()
                                                 }
                                             } else {
-                                                if(File(outputFilePath).exists()) {
+                                                if (File(outputFilePath).exists()) {
                                                     File(outputFilePath).delete()
                                                 }
-                                                val command4_back = "-i ${videoLogoOutputFile.absolutePath} -c copy $outputFilePath"
+                                                val command4_back =
+                                                    "-i ${videoLogoOutputFile.absolutePath} -c copy $outputFilePath"
                                                 FFmpegKit.executeAsync(command4_back) { command4back ->
                                                     if (ReturnCode.isSuccess(command4back.returnCode)) {
                                                         Log.e(TAG, "Success Saving Logo Video")
@@ -108,7 +130,10 @@ class DownloadWatermarkManager {
                                                         Log.e(TAG, "Error Merging Logo Video")
                                                         (context as Activity).runOnUiThread(Runnable {
                                                             kotlin.run {
-                                                                Log.e(TAG, "addWatermarkVideo: From UI Thread!  69")
+                                                                Log.e(
+                                                                    TAG,
+                                                                    "addWatermarkVideo: From UI Thread!  69"
+                                                                )
                                                                 videoAndEndFiles.deleteOnExit()
                                                                 videoLogoOutputFile.deleteOnExit()
                                                                 videoEndFile.deleteOnExit()
@@ -118,7 +143,10 @@ class DownloadWatermarkManager {
                                                     Log.e(TAG, "Error Merging End Video")
                                                     (context as Activity).runOnUiThread(Runnable {
                                                         kotlin.run {
-                                                            Log.e(TAG, "addWatermarkVideo: From UI Thread!  2")
+                                                            Log.e(
+                                                                TAG,
+                                                                "addWatermarkVideo: From UI Thread!  2"
+                                                            )
                                                             videoAndEndFiles.deleteOnExit()
                                                             videoLogoOutputFile.deleteOnExit()
                                                             videoEndFile.deleteOnExit()

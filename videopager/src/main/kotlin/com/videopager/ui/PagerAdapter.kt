@@ -67,6 +67,10 @@ internal class PagerAdapter(
         awaitViewHolder(position).attach(appPlayerView)
     }
 
+    suspend fun updateDownloadProgress(downloadProgress: Int, position: Int) {
+        awaitViewHolder(position).downloadProgress(downloadProgress)
+    }
+
     // Hides the video preview image when the player is ready to be shown.
     suspend fun showPlayerFor(position: Int) {
         awaitViewHolder(position).hidePreviewImage()

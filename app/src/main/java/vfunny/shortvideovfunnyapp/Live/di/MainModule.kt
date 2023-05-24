@@ -7,6 +7,7 @@ import coil.imageLoader
 import com.exo.players.ExoAppPlayerFactory
 import com.exo.ui.ExoAppPlayerViewFactory
 import com.player.models.VideoData
+import com.videopager.DownloadWatermarkManager
 import com.videopager.ui.VideoPagerFragment
 import com.videopager.vm.VideoPagerViewModelFactory
 import vfunny.shortvideovfunnyapp.Live.data.OneShotAssetVideoDataRepository
@@ -25,7 +26,8 @@ class MainModule(activity: ComponentActivity, videoItemList: ArrayList<VideoData
                         ).create(owner)
                     },
                     appPlayerViewFactory = ExoAppPlayerViewFactory(),
-                    imageLoader = activity.imageLoader
+                    imageLoader = activity.imageLoader,
+                    downloadManager = DownloadWatermarkManager()
                 )
                 else -> super.instantiate(classLoader, className)
             }
