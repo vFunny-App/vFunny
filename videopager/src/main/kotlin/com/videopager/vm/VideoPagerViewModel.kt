@@ -31,6 +31,7 @@ internal class VideoPagerViewModel(
             filterIsInstance<PlayerLifecycleEvent>().toPlayerLifecycleResults(),
             filterIsInstance<TappedPlayerEvent>().toTappedPlayerResults(),
             filterIsInstance<TappedWhatsappEvent>().toTappedWhatsappResults(),
+            filterIsInstance<TappedShareEvent>().toTappedShareResults(),
             filterIsInstance<OnPageSettledEvent>().toPageSettledResults(),
             filterIsInstance<PauseVideoEvent>().toPauseVideoResults()
         )
@@ -118,10 +119,18 @@ internal class VideoPagerViewModel(
     }
 
     private fun Flow<TappedWhatsappEvent>.toTappedWhatsappResults(): Flow<ViewResult> {
-        return mapLatest { event ->
+        return mapLatest {
             val videoData = requireNotNull(states.value.videoData)
             val page = requireNotNull(states.value.page)
             TappedWhatsappResult(videoData[page].mediaUri)
+        }
+    }
+
+    private fun Flow<TappedShareEvent>.toTappedShareResults(): Flow<ViewResult> {
+        return mapLatest {
+            val videoData = requireNotNull(states.value.videoData)
+            val page = requireNotNull(states.value.page)
+            TappedShareResult(videoData[page].mediaUri)
         }
     }
 
@@ -160,6 +169,7 @@ internal class VideoPagerViewModel(
         return merge(
             filterIsInstance<TappedPlayerResult>().toTappedPlayerEffects(),
             filterIsInstance<TappedWhatsappResult>().toSendWhatsappEffects(),
+            filterIsInstance<TappedShareResult>().toTappedShareEffects(),
             filterIsInstance<OnNewPageSettledResult>().toNewPageSettledEffects(),
             filterIsInstance<PlayerErrorResult>().toPlayerErrorEffects()
         )
@@ -171,6 +181,10 @@ internal class VideoPagerViewModel(
 
     private fun Flow<TappedWhatsappResult>.toSendWhatsappEffects(): Flow<ViewEffect> {
         return mapLatest { result -> ShareWhatsappEffect(result.mediaUri) }
+    }
+
+    private fun Flow<TappedShareResult>.toTappedShareEffects(): Flow<ViewEffect> {
+        return mapLatest { result -> TappedShareEffect(result.mediaUri) }
     }
 
     private fun Flow<OnNewPageSettledResult>.toNewPageSettledEffects(): Flow<ViewEffect> {

@@ -77,21 +77,11 @@ internal class PageViewHolder(
     init {
         binding.root.setOnClickListener { click(TappedPlayerEvent) }
         binding.waShare.setOnClickListener { click(TappedWhatsappEvent) }
+        binding.share.setOnClickListener { click(TappedShareEvent) }
     }
 
     var currentNativeAd: NativeAd? = null
 
-    private fun shareClick(url: String) {
-        val i = Intent(Intent.ACTION_SEND)
-        i.type = "text/plain"
-        i.putExtra(Intent.EXTRA_SUBJECT, "Sharing URL")
-        var shareMessage =
-            "Download App\n https://play.google.com/store/apps/details?id=vfunny.shortvideovfunnyapp \nWatch this Video\n\n"
-        shareMessage += url
-        i.putExtra(Intent.EXTRA_TEXT, shareMessage)
-        val context = itemView.context
-        context.startActivity(Intent.createChooser(i, "Share URL"))
-    }
 
     /**
      * Deletes a video item from Firebase Storage and RealTime Db
@@ -235,7 +225,6 @@ internal class PageViewHolder(
             binding.playPause.visibility = View.VISIBLE
             binding.adContainer.visibility = View.GONE
             binding.previewImage.load(videoData.previewImageUri, imageLoader)
-            binding.share.setOnClickListener { shareClick(videoData.mediaUri) }
             binding.downloadButton.setOnClickListener {
                 runBlocking {
                     //Run converting process in a new thread as rendering is intense process for main thread

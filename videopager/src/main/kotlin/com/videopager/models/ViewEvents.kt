@@ -13,6 +13,8 @@ internal object TappedPlayerEvent : ViewEvent()
 
 internal object TappedWhatsappEvent : ViewEvent()
 
+internal object TappedShareEvent : ViewEvent()
+
 internal data class OnPageSettledEvent(val page: Int) : ViewEvent()
 
 internal object PauseVideoEvent : ViewEvent()

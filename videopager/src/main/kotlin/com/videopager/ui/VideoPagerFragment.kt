@@ -76,6 +76,7 @@ class VideoPagerFragment(
                     "Image/${effect.throwable.message}",
                     Snackbar.LENGTH_LONG).show()
                 is ShareWhatsappEffect -> shareToWhatsapp(effect.mediaUri)
+                is TappedShareEffect -> shareClick(effect.mediaUri)
             }
         }
 
@@ -117,6 +118,7 @@ class VideoPagerFragment(
             when (event) {
                 is TappedPlayerEvent -> event
                 is TappedWhatsappEvent -> event
+                is TappedShareEvent -> event
                 else -> throw IllegalArgumentException("Unknown event type: $event")
             }
         }
@@ -135,4 +137,14 @@ class VideoPagerFragment(
         requireContext().startActivity(Intent.createChooser(intent, "Share Video"))
     }
 
+    private fun shareClick(url: String) {
+        val shareMessage =
+            "Download vFunny App: https://play.google.com/store/apps/details?id=vfunny.shortvideovfunnyapp\nWatch this Video $url"
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, "Sharing Video")
+            putExtra(Intent.EXTRA_TEXT, shareMessage)
+        }
+        requireContext().startActivity(Intent.createChooser(intent, "Share Video"))
+    }
 }
