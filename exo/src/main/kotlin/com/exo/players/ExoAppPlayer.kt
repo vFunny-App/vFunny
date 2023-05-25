@@ -31,7 +31,6 @@ internal class ExoAppPlayer(
         updater.update(player = player, incoming = videoData)
         // Player should only have saved state restored to it one time per instance of this class.
         if (!isPlayerSetUp) {
-            Log.e("TAG", "playMediaAt: PlayerSetUp!")
             setUpPlayerState(playerState)
             isPlayerSetUp = true
             initPreLoading(0)
@@ -94,7 +93,6 @@ internal class ExoAppPlayer(
     }
 
     override fun playMediaAt(position: Int) {
-        Log.e("TAG", "playMediaAt: $position")
         // Already playing media at this position; nothing to do
         if (player.currentMediaItemIndex == position && player.isPlaying) return
         player.seekToDefaultPosition(position)

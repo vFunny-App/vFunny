@@ -26,8 +26,7 @@ class MainModule(activity: ComponentActivity, videoItemList: ArrayList<VideoData
                         ).create(owner)
                     },
                     appPlayerViewFactory = ExoAppPlayerViewFactory(),
-                    imageLoader = activity.imageLoader,
-                    downloadManager = DownloadWatermarkManager()
+                    imageLoader = activity.imageLoader
                 )
                 else -> super.instantiate(classLoader, className)
             }

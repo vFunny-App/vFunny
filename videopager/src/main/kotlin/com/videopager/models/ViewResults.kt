@@ -13,6 +13,10 @@ internal data class LoadVideoDataResult(
     val currentMediaItemIndex: Int,
 ) : ViewResult()
 
+internal data class DownloadVideoDataResult(
+    val downloadList: MutableList<HashMap<Int, Int>>
+) : ViewResult()
+
 internal data class CreatePlayerResult(val appPlayer: AppPlayer) : ViewResult()
 
 internal object TearDownPlayerResult : ViewResult()
@@ -22,8 +26,6 @@ internal data class TappedPlayerResult(@DrawableRes val drawable: Int) : ViewRes
 internal data class TappedWhatsappResult(val mediaUri: String) : ViewResult()
 
 internal data class TappedShareResult(val mediaUri: String) : ViewResult()
-
-internal data class TappedDownloadResult(val mediaUri: String) : ViewResult()
 
 internal data class OnNewPageSettledResult(val page: Int) : ViewResult()
 

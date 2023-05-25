@@ -4,7 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -15,20 +14,18 @@ import androidx.viewpager2.widget.ViewPager2
 import coil.ImageLoader
 import com.google.android.material.snackbar.Snackbar
 import com.player.ui.AppPlayerView
-import com.videopager.DownloadWatermarkManager
 import com.videopager.R
 import com.videopager.databinding.VideoPagerFragmentBinding
 import com.videopager.models.*
 import com.videopager.ui.extensions.*
+import com.videopager.ui.views.DownloadButtonView
 import com.videopager.vm.VideoPagerViewModel
-import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
 class VideoPagerFragment(
     private val viewModelFactory: (SavedStateRegistryOwner) -> ViewModelProvider.Factory,
     private val appPlayerViewFactory: AppPlayerView.Factory,
-    private val imageLoader: ImageLoader,
-    private val downloadManager: DownloadWatermarkManager,
+    private val imageLoader: ImageLoader
 ) : Fragment(R.layout.video_pager_fragment) {
     private val viewModel: VideoPagerViewModel by viewModels { viewModelFactory(this) }
     private lateinit var adapter: PagerAdapter
@@ -55,13 +52,24 @@ class VideoPagerFragment(
             } else {
                 appPlayerView.detachPlayer()
             }
+            if (!state.downloadList.isNullOrEmpty()) {
+                val items = mutableListOf<DownloadButtonView.Item>()
+                for (pageMap in state.downloadList) {
+                    for ((pageNumber, progress) in pageMap) {
+                        Log.e("@DOWNLOAD", "downloadList: Updated", )
+                        Log.e("@DOWNLOAD", "Item $pageNumber Progress: $progress%", )
+                        val item = DownloadButtonView.Item("Item $pageNumber", "Progress: $progress%")
+                        items.add(item)
+                    }
+                }
+                binding.downloadView.setItems(items)
+            }
             // Restore any saved page state from process recreation and configuration changes.
             // Guarded by an isIdle check so that state emissions mid-swipe or during page change
             // animations are ignored. There would have a jarring page-change effect without that.
             if (binding.viewPager.isIdle) {
                 binding.viewPager.setCurrentItem(state.page, false)
             }
-
             // Can't query any ViewHolders if the adapter has no pages
             if (adapter.currentList.isNotEmpty()) {
                 // Set the player view on the active page. Note that ExoPlayer won't render
@@ -83,9 +91,9 @@ class VideoPagerFragment(
                     "Image/${effect.throwable.message}",
                     Snackbar.LENGTH_LONG
                 ).show()
+
                 is ShareWhatsappEffect -> shareToWhatsapp(effect.mediaUri)
                 is TappedShareEffect -> shareClick(effect.mediaUri)
-                is TappedDownloadEffect -> downloadVideo(effect.mediaUri)
             }
         }
 
@@ -158,23 +166,4 @@ class VideoPagerFragment(
         requireContext().startActivity(Intent.createChooser(intent, "Share Video"))
     }
 
-    private suspend fun downloadVideo(mediaUri: String) { // TODO : Maybe we can let download be at ViewModel or do it at TappedDownloadEvent??
-        var downloadProgress = -1
-        Toast.makeText(context, "Download Not Enabled, Mocking download", Toast.LENGTH_SHORT).show()
-        CoroutineScope(Dispatchers.IO).launch {
-            while (downloadProgress  < 100) {
-                Log.e("@Download", "downloadVideo BG : $downloadProgress", )
-                downloadProgress++
-                adapter.updateDownloadProgress(downloadProgress, 0)
-                if (downloadProgress == 0) {
-                    delay(5000) // Wait for approximately 500 milliseconds
-                }
-                delay(100) // Wait for approximately 500 milliseconds
-            }
-            downloadProgress=-1
-            adapter.updateDownloadProgress(downloadProgress, 0)
-//                downloadManager.addWatermarkVideo(mediaUri, requireContext())
-        }
-        Toast.makeText(context, "Download Not Enabled, Mocking download Finished", Toast.LENGTH_SHORT).show()
-    }
 }
