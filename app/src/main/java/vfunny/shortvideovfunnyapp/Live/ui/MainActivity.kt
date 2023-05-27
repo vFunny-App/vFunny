@@ -10,6 +10,9 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.commit
 import androidx.fragment.app.replace
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.google.firebase.database.*
 import com.player.models.VideoData
 import com.videopager.ui.VideoPagerFragment
@@ -22,6 +25,17 @@ import vfunny.shortvideovfunnyapp.Login.model.User
 import vfunny.shortvideovfunnyapp.Post.model.Const
 import vfunny.shortvideovfunnyapp.R
 import vfunny.shortvideovfunnyapp.databinding.MainActivityBinding
+import vfunny.shortvideovfunnyapp.vm.MainActivityViewModel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.onEach
+import vfunny.shortvideovfunnyapp.Live.ui.extensions.events
+import vfunny.shortvideovfunnyapp.models.*
 
 class MainActivity : BaseActivity(), AuthManager.AuthListener {
     private val TAG: String = "MainActivity"
@@ -30,6 +44,12 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
     private var showLanguage = false
     private lateinit var binding: MainActivityBinding
 
+    private val viewModel = ViewModelProvider(this)[MainActivityViewModel::class.java]
+
+    // Extra buffer capacity so that emissions can be sent outside a coroutine
+    private val clicks = MutableSharedFlow<Any>(extraBufferCapacity = 1)
+    private fun clicks() = clicks.asSharedFlow()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // Manual dependency injection
         context = this.applicationContext
@@ -37,6 +57,30 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
         showLanguage = intent.getBooleanExtra("showLanguage", false)
         binding = MainActivityBinding.inflate(layoutInflater)
         initWelcomeAnimation()
+
+        val states = viewModel.states.onEach { state ->
+
+        }
+
+        val effects = viewModel.effects.onEach { effect ->
+            when (effect) {
+                is PageEffect -> Log.e(TAG, "onCreate: ", )
+                is AnimationEffect -> Log.e(TAG, "onCreate: ", )
+                is ResetAnimationsEffect -> Log.e(TAG, "onCreate: ", )
+                is TappedLanguageEffect -> Log.e(TAG, "onCreate: ", )
+                is TappedLanguageListEffect -> Log.e(TAG, "onCreate: ", )
+                is TappedUpdatesNotifyEffect -> Log.e(TAG, "onCreate: ", )
+                is PlayerErrorEffect -> Log.e(TAG, "onCreate: ", )
+            }
+        }
+
+        val events = merge(
+            lifecycle.viewEvents(),
+            viewEvents(),
+        ).onEach(viewModel::processEvent)
+
+        merge(states, effects, events).launchIn(lifecycleScope)
+
         if (User.currentKey() == null) {
             AuthManager.getInstance().showLogin(this) // Show login screen if user key is null
         } else {
@@ -47,10 +91,24 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
         binding.setLanguageBtn.setOnClickListener {
             showLanguageDialog()
         }
-        if(showLanguage){
+        if (showLanguage) {
             showLanguageDialog()
         }
     }
+
+    private fun viewEvents(): Flow<ViewEvent> {
+        return clicks().map { event ->
+            when (event) {
+                is TappedAddPostsEvent -> event
+                is ToggleAdsEvent -> event
+                is TappedUpdatesNotifyEvent -> event
+                is TappedLanguageEvent -> event
+                is TappedLanguageListEvent -> event
+                else -> throw IllegalArgumentException("Unknown event type: $event")
+            }
+        }
+    }
+
 
     private fun showLanguageDialog() {
         showLanguage = false
@@ -97,9 +155,11 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
                     isAdsEnabled = value
                 }.addOnFailureListener {
                     binding.adsSwitch.isChecked = !value
-                    Toast.makeText(this@MainActivity,
+                    Toast.makeText(
+                        this@MainActivity,
                         "Something went wrong while changing ads Status",
-                        Toast.LENGTH_LONG).show()
+                        Toast.LENGTH_LONG
+                    ).show()
                     Log.e(TAG, "showConfirmationDialog: Error : ", it)
                 }
         }.setNegativeButton("No") { dialog, id ->
@@ -198,4 +258,19 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
     override fun onAuthFailed() {
         AuthManager.getInstance().showLogin(this)
     }
+
+
+    private fun Lifecycle.viewEvents(): Flow<ViewEvent> {
+        return events().filter { event -> event == Lifecycle.Event.ON_START || event == Lifecycle.Event.ON_STOP }
+            .map { event ->
+                // Fragment starting or stopping is a signal to create or tear down the player, respectively.
+                // The player should not be torn down across config changes, however.
+                when (event) {
+                    Lifecycle.Event.ON_START -> HandleIntentsEvent.Start
+                    Lifecycle.Event.ON_STOP -> HandleIntentsEvent.Stop(isChangingConfigurations)
+                    else -> error("Unhandled event: $event")
+                }
+            }
+    }
+
 }
