@@ -89,7 +89,6 @@ internal class VideoPagerViewModel(
     }
 
     private suspend fun createPlayer(): Flow<ViewResult> {
-        Log.e("TAG", "createPlayer:  This Ran 3")
         check(states.value.appPlayer == null) { "Tried to create a player when one already exists" }
         val config = AppPlayer.Factory.Config(loopVideos = true)
         val appPlayer = appPlayerFactory.create(config)
@@ -155,14 +154,14 @@ internal class VideoPagerViewModel(
                         AddWatermarkVideoBuilder(mediaUri).progressListener(object :
                             ProgressListener {
                             override fun onProgress(page: Int, progress: Int) {
-                                for (pageMap in  requireNotNull(states.value.downloadList)) {
+                                if(downloadList.isEmpty()){
+                                    downloadList.add(hashMapOf(page to progress))
+                                } else for (pageMap in downloadList) {
                                     if (pageMap.containsKey(page)) { // TODO need to handle multi click on download button
-                                        // Update the progress of the page
                                         pageMap[progress] = progress
                                         break
                                     } else {
-                                        Log.e("@DOWNLOAD", "onProgress: Added $page to $progress", )
-                                        downloadList.add( hashMapOf(page to progress))
+                                        downloadList.add(hashMapOf(page to progress))
                                     }
                                 }
                                 launch { progressChannel.send(progress) }

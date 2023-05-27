@@ -2,7 +2,6 @@ package com.exo.players
 
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import com.exo.data.VideoDataUpdater
 import com.exo.service.VideoPreLoadingService
 import com.exo.ui.MAX_CACHED_VIDEOS
