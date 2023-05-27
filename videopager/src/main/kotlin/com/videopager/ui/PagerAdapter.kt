@@ -1,5 +1,6 @@
 package com.videopager.ui
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
@@ -31,7 +32,7 @@ internal class PagerAdapter(
     private var recyclerView: RecyclerView? = null
 
     // Extra buffer capacity so that emissions can be sent outside a coroutine
-    private val clicks = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    private val clicks = MutableSharedFlow<Any>(extraBufferCapacity = 1)
 
     fun clicks() = clicks.asSharedFlow()
 
@@ -39,7 +40,10 @@ internal class PagerAdapter(
         return LayoutInflater.from(parent.context)
             .let { inflater -> PageItemBinding.inflate(inflater, parent, false) }
             .let { binding ->
-                PageViewHolder(binding, imageLoader) { clicks.tryEmit(Unit) }
+                PageViewHolder(binding, imageLoader) {
+                    Log.e("TAG", "onCreateViewHolder: $clicks")
+                    clicks.tryEmit(it)
+                }
             }
     }
 
@@ -61,6 +65,10 @@ internal class PagerAdapter(
      */
     suspend fun attachPlayerView(appPlayerView: AppPlayerView, position: Int) {
         awaitViewHolder(position).attach(appPlayerView)
+    }
+
+    suspend fun updateDownloadProgress(downloadProgress: Int, position: Int) {
+        awaitViewHolder(position).downloadProgress(downloadProgress)
     }
 
     // Hides the video preview image when the player is ready to be shown.

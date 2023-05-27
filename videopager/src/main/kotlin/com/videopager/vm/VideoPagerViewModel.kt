@@ -1,13 +1,20 @@
 package com.videopager.vm
 
 import android.util.Log
+import android.widget.Toast
+import androidx.lifecycle.viewModelScope
 import com.player.players.AppPlayer
 import com.videopager.R
+import com.videopager.data.ProgressListener
 import com.videopager.data.VideoDataRepository
 import com.videopager.models.*
 import com.videopager.ui.extensions.ViewState
+import com.videopager.watermark.AddWatermarkVideoBuilder
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
 /**
  * Owns a stateful [ViewState.appPlayer] instance that will get created and torn down in parallel
@@ -30,6 +37,9 @@ internal class VideoPagerViewModel(
             filterIsInstance<LoadVideoDataEvent>().toLoadVideoDataResults(),
             filterIsInstance<PlayerLifecycleEvent>().toPlayerLifecycleResults(),
             filterIsInstance<TappedPlayerEvent>().toTappedPlayerResults(),
+            filterIsInstance<TappedWhatsappEvent>().toTappedWhatsappResults(),
+            filterIsInstance<TappedShareEvent>().toTappedShareResults(),
+            filterIsInstance<TappedDownloadEvent>().toTappedDownloadResults(),
             filterIsInstance<OnPageSettledEvent>().toPageSettledResults(),
             filterIsInstance<PauseVideoEvent>().toPauseVideoResults()
         )
@@ -79,7 +89,6 @@ internal class VideoPagerViewModel(
     }
 
     private suspend fun createPlayer(): Flow<ViewResult> {
-        Log.e("TAG", "createPlayer:  This Ran 3")
         check(states.value.appPlayer == null) { "Tried to create a player when one already exists" }
         val config = AppPlayer.Factory.Config(loopVideos = true)
         val appPlayer = appPlayerFactory.create(config)
@@ -116,6 +125,62 @@ internal class VideoPagerViewModel(
         }
     }
 
+    private fun Flow<TappedWhatsappEvent>.toTappedWhatsappResults(): Flow<ViewResult> {
+        return mapLatest {
+            val videoData = requireNotNull(states.value.videoData)
+            val page = requireNotNull(states.value.page)
+            TappedWhatsappResult(videoData[page].mediaUri)
+        }
+    }
+
+    private fun Flow<TappedShareEvent>.toTappedShareResults(): Flow<ViewResult> {
+        return mapLatest {
+            val videoData = requireNotNull(states.value.videoData)
+            val page = requireNotNull(states.value.page)
+            TappedShareResult(videoData[page].mediaUri)
+        }
+    }
+
+    private fun Flow<TappedDownloadEvent>.toTappedDownloadResults(): Flow<ViewResult> {
+        return flatMapLatest {
+            flow {
+                val videoData = requireNotNull(states.value.videoData)
+                val page = requireNotNull(states.value.page)
+                val mediaUri = videoData[page].mediaUri
+                val downloadList = requireNotNull(states.value.downloadList)
+                if (mediaUri.isNotEmpty()) {
+                    val progressChannel = Channel<Int>() // Channel to receive progress updates
+                    val progressJob = viewModelScope.launch(Dispatchers.IO) {
+                        AddWatermarkVideoBuilder(mediaUri).progressListener(object :
+                            ProgressListener {
+                            override fun onProgress(page: Int, progress: Int) {
+                                if(downloadList.isEmpty()){
+                                    downloadList.add(hashMapOf(page to progress))
+                                } else for (pageMap in downloadList) {
+                                    if (pageMap.containsKey(page)) { // TODO need to handle multi click on download button
+                                        pageMap[progress] = progress
+                                        break
+                                    } else {
+                                        downloadList.add(hashMapOf(page to progress))
+                                    }
+                                }
+                                launch { progressChannel.send(progress) }
+                            }
+                        }).build()
+                    }
+
+                    // Emit progress updates from the channel as ViewResult
+                    for (progress in progressChannel) {
+                        emit(DownloadVideoDataResult(downloadList))
+                    }
+
+                    // Cancel the progress job when the flow completes or is cancelled
+                    progressJob.cancel()
+                }
+            }
+        }
+    }
+
     private fun Flow<OnPageSettledEvent>.toPageSettledResults(): Flow<ViewResult> {
         return mapLatest { event ->
             Log.e("TAG", "toPageSettledResults: This Ran 2")
@@ -136,8 +201,12 @@ internal class VideoPagerViewModel(
     override fun ViewResult.reduce(state: ViewState): ViewState {
         // MVI reducer boilerplate
         return when (this) {
-            is LoadVideoDataResult -> state.copy(videoData = videoData,
-                page = currentMediaItemIndex)
+            is LoadVideoDataResult -> state.copy(
+                videoData = videoData,
+                page = currentMediaItemIndex
+            )
+
+            is DownloadVideoDataResult -> state.copy(downloadList = downloadList)
             is CreatePlayerResult -> state.copy(appPlayer = appPlayer)
             is TearDownPlayerResult -> state.copy(appPlayer = null)
             is OnNewPageSettledResult -> state.copy(page = page, showPlayer = false)
@@ -150,7 +219,8 @@ internal class VideoPagerViewModel(
     override fun Flow<ViewResult>.toEffects(): Flow<ViewEffect> {
         return merge(
             filterIsInstance<TappedPlayerResult>().toTappedPlayerEffects(),
-            filterIsInstance<TappedMuteResults>().toTappedMuteEffects(),
+            filterIsInstance<TappedWhatsappResult>().toSendWhatsappEffects(),
+            filterIsInstance<TappedShareResult>().toTappedShareEffects(),
             filterIsInstance<OnNewPageSettledResult>().toNewPageSettledEffects(),
             filterIsInstance<PlayerErrorResult>().toPlayerErrorEffects()
         )
@@ -160,8 +230,12 @@ internal class VideoPagerViewModel(
         return mapLatest { result -> AnimationEffect(result.drawable) }
     }
 
-    private fun Flow<TappedMuteResults>.toTappedMuteEffects(): Flow<ViewEffect> {
-        return mapLatest { result -> AnimationEffect(result.drawable) }
+    private fun Flow<TappedWhatsappResult>.toSendWhatsappEffects(): Flow<ViewEffect> {
+        return mapLatest { result -> ShareWhatsappEffect(result.mediaUri) }
+    }
+
+    private fun Flow<TappedShareResult>.toTappedShareEffects(): Flow<ViewEffect> {
+        return mapLatest { result -> TappedShareEffect(result.mediaUri) }
     }
 
     private fun Flow<OnNewPageSettledResult>.toNewPageSettledEffects(): Flow<ViewEffect> {

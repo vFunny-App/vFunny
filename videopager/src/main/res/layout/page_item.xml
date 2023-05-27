@@ -109,6 +109,18 @@
         app:layout_constraintTop_toBottomOf="@+id/share"
         style="?android:borderlessButtonStyle"/>
 
+    <com.google.android.material.progressindicator.CircularProgressIndicator
+        android:id="@+id/download_info_progress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="@+id/download_button"
+        app:layout_constraintEnd_toStartOf="@+id/download_button"
+        app:layout_constraintBottom_toBottomOf="@+id/download_button"
+        app:showAnimationBehavior="inward"
+        android:indeterminate="false"
+        android:visibility="gone"
+        />
+
     <ImageView
         android:id="@+id/more_options"
         android:layout_width="45dp"

@@ -177,6 +177,11 @@ abstract class BaseActivity : AppCompatActivity() {
                         // Do something with the posts
                         Log.d(TAG, "onDataChange: unwatchedPosts.size ${unwatchedPosts.size}")
                         // Pass the list of unwatched posts to your application
+//                        videoItemList.add(VideoData("0",
+//                            mediaUri = "https://firebasestorage.googleapis.com/v0/b/vfunnyapp-71911.appspot.com/o/stream%2Fstream1.m3u8?alt=media&token=7914103c-1d0b-4644-be43-2e4c4cfeba13",
+//                            previewImageUri = "",
+//                            language = Language.WORLDWIDE
+//                        ))
                         unwatchedPosts.forEach {
                             count++
                             videoCount++
@@ -286,9 +291,10 @@ abstract class BaseActivity : AppCompatActivity() {
         dialogInterface: DialogInterface,
         language: Language,
     ) {
-        val builder = AlertDialog.Builder(this@BaseActivity)
-        builder.setMessage("Are you sure you want to upload ${data.clipData?.itemCount ?: 1} file(s) as ${language.name}?")
-            .setCancelable(false).setPositiveButton("Yes") { dialog, _ ->
+        MaterialAlertDialogBuilder(applicationContext, android.R.style.Theme_Material_Dialog_Alert)
+            .setTitle("WARNING!")
+            .setMessage("Are you sure you want to upload ${data.clipData?.itemCount ?: 1} file(s) as ${language.name}?")
+            .setPositiveButton("Yes") { dialog, _ ->
                 if (data.clipData != null) {
                     val uriList = ArrayList<Uri>()
                     for (i in 0 until data.clipData!!.itemCount) {
@@ -311,11 +317,10 @@ abstract class BaseActivity : AppCompatActivity() {
                 dialog.dismiss()
                 dialogInterface.dismiss()
             }.setNegativeButton("BACK") { dialog, _ ->
-                // Dismiss the dialog
                 dialog.dismiss()
             }
-        val alert = builder.create()
-        alert.show()
+            .setCancelable(false)
+            .show()
     }
 
     interface LanguageSelectionCallback {

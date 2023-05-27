@@ -2,7 +2,6 @@ package com.exo.players
 
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import com.exo.data.VideoDataUpdater
 import com.exo.service.VideoPreLoadingService
 import com.exo.ui.MAX_CACHED_VIDEOS
@@ -31,7 +30,6 @@ internal class ExoAppPlayer(
         updater.update(player = player, incoming = videoData)
         // Player should only have saved state restored to it one time per instance of this class.
         if (!isPlayerSetUp) {
-            Log.e("TAG", "playMediaAt: PlayerSetUp!")
             setUpPlayerState(playerState)
             isPlayerSetUp = true
             initPreLoading(0)
@@ -94,7 +92,6 @@ internal class ExoAppPlayer(
     }
 
     override fun playMediaAt(position: Int) {
-        Log.e("TAG", "playMediaAt: $position")
         // Already playing media at this position; nothing to do
         if (player.currentMediaItemIndex == position && player.isPlaying) return
         player.seekToDefaultPosition(position)
