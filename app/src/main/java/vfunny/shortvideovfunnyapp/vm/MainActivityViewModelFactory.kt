@@ -5,12 +5,9 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.savedstate.SavedStateRegistryOwner
-import com.player.players.AppPlayer
-import com.videopager.data.VideoDataRepository
+import vfunny.shortvideovfunnyapp.models.ViewState
 
 class MainActivityViewModelFactory(
-    private val repository: VideoDataRepository,
-    private val appPlayerFactory: AppPlayer.Factory,
 ) {
     fun create(owner: SavedStateRegistryOwner): ViewModelProvider.Factory {
         return object : AbstractSavedStateViewModelFactory(owner, null) {
@@ -20,9 +17,8 @@ class MainActivityViewModelFactory(
                 handle: SavedStateHandle,
             ): T {
                 @Suppress("UNCHECKED_CAST")
-                return MainActivityViewModelFactory(
-                    repository = repository,
-                    appPlayerFactory = appPlayerFactory,
+                return MainActivityViewModel(
+                    initialState = ViewState(false, null)
                 ) as T
             }
         }

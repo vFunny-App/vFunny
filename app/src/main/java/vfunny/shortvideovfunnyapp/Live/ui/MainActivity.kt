@@ -7,11 +7,11 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.commit
 import androidx.fragment.app.replace
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.database.*
 import com.player.models.VideoData
@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
 import vfunny.shortvideovfunnyapp.Live.ui.extensions.events
 import vfunny.shortvideovfunnyapp.models.*
+import vfunny.shortvideovfunnyapp.vm.MainActivityViewModelFactory
 
 class MainActivity : BaseActivity(), AuthManager.AuthListener {
     private val TAG: String = "MainActivity"
@@ -43,8 +44,11 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
     private var context: Context? = null
     private var showLanguage = false
     private lateinit var binding: MainActivityBinding
+    private val viewModelFactory = MainActivityViewModelFactory()
 
-    private val viewModel = ViewModelProvider(this)[MainActivityViewModel::class.java]
+    private val viewModel: MainActivityViewModel by viewModels {
+        viewModelFactory.create(this@MainActivity)
+    }
 
     // Extra buffer capacity so that emissions can be sent outside a coroutine
     private val clicks = MutableSharedFlow<Any>(extraBufferCapacity = 1)
@@ -58,19 +62,21 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
         binding = MainActivityBinding.inflate(layoutInflater)
         initWelcomeAnimation()
 
-        val states = viewModel.states.onEach { state ->
 
+        val states = viewModel.states.onEach { state ->
+            Log.e(TAG, "onCreate: adsEnabled ${state.adsEnabled}")
+            Log.e(TAG, "onCreate: uploadData ${state.uploadData}")
         }
 
         val effects = viewModel.effects.onEach { effect ->
             when (effect) {
-                is PageEffect -> Log.e(TAG, "onCreate: ", )
-                is AnimationEffect -> Log.e(TAG, "onCreate: ", )
-                is ResetAnimationsEffect -> Log.e(TAG, "onCreate: ", )
-                is TappedLanguageEffect -> Log.e(TAG, "onCreate: ", )
-                is TappedLanguageListEffect -> Log.e(TAG, "onCreate: ", )
-                is TappedUpdatesNotifyEffect -> Log.e(TAG, "onCreate: ", )
-                is PlayerErrorEffect -> Log.e(TAG, "onCreate: ", )
+                is PageEffect -> Log.e(TAG, "onCreate: $effect.")
+                is AnimationEffect -> Log.e(TAG, "onCreate: ${effect.drawable}")
+                is ResetAnimationsEffect -> Log.e(TAG, "onCreate: $effect")
+                is TappedLanguageEffect -> Log.e(TAG, "onCreate: ${effect.page}")
+                is TappedLanguageListEffect -> Log.e(TAG, "onCreate: $effect")
+                is TappedUpdatesNotifyEffect -> Log.e(TAG, "onCreate: ${effect.mediaUri}")
+                is PlayerErrorEffect -> Log.e(TAG, "onCreate: ${effect.throwable}")
             }
         }
 
@@ -89,6 +95,7 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
         setContentView(binding.root)
         setUiFromBuildType()
         binding.setLanguageBtn.setOnClickListener {
+            clicks.tryEmit(TappedLanguageEvent)
             showLanguageDialog()
         }
         if (showLanguage) {
