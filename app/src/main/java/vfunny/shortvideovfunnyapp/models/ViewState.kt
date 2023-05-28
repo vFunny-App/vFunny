@@ -1,9 +1,10 @@
 package vfunny.shortvideovfunnyapp.models
 
-import com.player.models.VideoData
-import com.player.players.AppPlayer
+import vfunny.shortvideovfunnyapp.Post.model.Language
 
 internal data class ViewState(
-    val adsEnabled: Boolean = false,
     val uploadData: List<UploadData>? = null,
+    val isLoggedIn: Boolean = false,
+    val adsEnabled: Boolean = false,
+    val languagesMap: MutableMap<Language, Boolean> = mutableMapOf()
 )

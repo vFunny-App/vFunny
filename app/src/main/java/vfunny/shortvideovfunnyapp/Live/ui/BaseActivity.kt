@@ -323,8 +323,4 @@ abstract class BaseActivity : AppCompatActivity() {
             .show()
     }
 
-    interface LanguageSelectionCallback {
-        fun onLanguageSelected()
-    }
-
 }

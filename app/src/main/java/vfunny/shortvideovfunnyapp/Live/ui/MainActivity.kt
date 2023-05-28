@@ -15,6 +15,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.database.*
 import com.player.models.VideoData
+import vfunny.shortvideovfunnyapp.Live.data.LanguageRepository
 import com.videopager.ui.VideoPagerFragment
 import vfunny.shortvideovfunnyapp.Lang.ui.LangListActivity
 import vfunny.shortvideovfunnyapp.Live.di.MainModule
@@ -44,10 +45,11 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
     private var context: Context? = null
     private var showLanguage = false
     private lateinit var binding: MainActivityBinding
-    private val viewModelFactory = MainActivityViewModelFactory()
+    private val viewModelFactory = MainActivityViewModelFactory(LanguageRepository())
+    private lateinit var languageSelectionDialog: LanguageSelectionDialog
 
     private val viewModel: MainActivityViewModel by viewModels {
-        viewModelFactory.create(this@MainActivity)
+        viewModelFactory.create(this)
     }
 
     // Extra buffer capacity so that emissions can be sent outside a coroutine
@@ -61,7 +63,9 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
         showLanguage = intent.getBooleanExtra("showLanguage", false)
         binding = MainActivityBinding.inflate(layoutInflater)
         initWelcomeAnimation()
-
+        languageSelectionDialog = LanguageSelectionDialog(this) {
+            clicks.tryEmit(it)
+        }
 
         val states = viewModel.states.onEach { state ->
             Log.e(TAG, "onCreate: adsEnabled ${state.adsEnabled}")
@@ -73,7 +77,10 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
                 is PageEffect -> Log.e(TAG, "onCreate: $effect.")
                 is AnimationEffect -> Log.e(TAG, "onCreate: ${effect.drawable}")
                 is ResetAnimationsEffect -> Log.e(TAG, "onCreate: $effect")
-                is TappedLanguageEffect -> Log.e(TAG, "onCreate: ${effect.page}")
+                is LanguageViewEffect.SelectLanguage -> {
+                    languageSelectionDialog.show()
+                    languageSelectionDialog.showLanguageDialog(effect.languagesMap)
+                }
                 is TappedLanguageListEffect -> Log.e(TAG, "onCreate: $effect")
                 is TappedUpdatesNotifyEffect -> Log.e(TAG, "onCreate: ${effect.mediaUri}")
                 is PlayerErrorEffect -> Log.e(TAG, "onCreate: ${effect.throwable}")
@@ -95,11 +102,11 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
         setContentView(binding.root)
         setUiFromBuildType()
         binding.setLanguageBtn.setOnClickListener {
-            clicks.tryEmit(TappedLanguageEvent)
-            showLanguageDialog()
+            clicks.tryEmit(LanguageViewEvent.SelectLanguage)
         }
+//        clicks.tryEmit(TappedLanguageEvent)
         if (showLanguage) {
-            showLanguageDialog()
+            clicks.tryEmit(LanguageViewEvent.SelectLanguage)
         }
     }
 
@@ -109,26 +116,22 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
                 is TappedAddPostsEvent -> event
                 is ToggleAdsEvent -> event
                 is TappedUpdatesNotifyEvent -> event
-                is TappedLanguageEvent -> event
                 is TappedLanguageListEvent -> event
+                //Language Selection
+                is LanguageViewEvent.SelectLanguage -> event
+                is LanguageViewEvent.ConfirmSelection -> event
+                is LanguageViewEvent.CancelSelection -> event
+                //Unknown
                 else -> throw IllegalArgumentException("Unknown event type: $event")
             }
         }
     }
 
-
-    private fun showLanguageDialog() {
-        showLanguage = false
-        val dialog = LanguageSelectionDialog(this)
-        dialog.setLanguageSelectionCallback(object : LanguageSelectionCallback {
-            override fun onLanguageSelected() {
-                val intent = Intent(this@MainActivity, MainActivity::class.java)
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
-                startActivity(intent)
-                finish()
-            }
-        })
-        dialog.show()
+    fun onLanguageSelected() {
+        val intent = Intent(this@MainActivity, MainActivity::class.java)
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
+        startActivity(intent)
+        finish()
     }
 
     private fun initWelcomeAnimation() {
