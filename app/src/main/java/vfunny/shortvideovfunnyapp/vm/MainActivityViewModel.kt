@@ -71,17 +71,10 @@ internal class MainActivityViewModel(
 
     private fun Flow<LanguageViewEvent.ConfirmSelection>.toConfirmSelectionResults(): Flow<ViewResult> {
         return flatMapLatest {
-            it.languageMap.forEach {
-                Log.e("TAG", "confirm :  ${it.key}: ${it.value} \n",)
-            }
-            Log.e("TAG", "toConfirmSelectionResults: ConfirmSelection " , )
+            Log.e("TAG", "toConfirmSelectionResults: ConfirmSelection ")
             flow {
-                viewModelScope.launch {
-                    languageRepository.setLanguages(it.languageMap)
-                        .collect { languages ->
-                            processEvent(LoadLanguageEvent(languages))
-                        }
-                }
+                languageRepository.setLanguages(it.languageMap)
+                emit(LanguageViewResult.ConfirmSelection(it.languageMap))
             }
         }
     }
@@ -129,6 +122,7 @@ internal class MainActivityViewModel(
         // MVI reducer boilerplate
         return when (this) {
             is LoadLanguageResult -> state.copy(languagesMap = languagesMap)
+            is LanguageViewResult.ConfirmSelection -> state.copy(languagesMap = languagesMap)
             is TappedAddPostsResult -> state.copy(uploadData = uploadData)
             is ToggleAdsResult -> state.copy(adsEnabled = isAdsEnabled)
             else -> state
@@ -138,6 +132,7 @@ internal class MainActivityViewModel(
     override fun Flow<ViewResult>.toEffects(): Flow<ViewEffect> {
         return merge(
             filterIsInstance<LanguageViewResult.SelectLanguage>().toLanguageLoadEffects(),
+            filterIsInstance<LanguageViewResult.ConfirmSelection>().toConfirmSelectionEffects(),
             filterIsInstance<TappedLanguageListResult>().toTappedLanguageListEffects(),
             filterIsInstance<TappedUpdatesNotifyResult>().toTappedUpdatesNotifyEffects(),
             filterIsInstance<PlayerErrorResult>().toPlayerErrorEffects()
@@ -149,6 +144,11 @@ internal class MainActivityViewModel(
             LanguageViewEffect.SelectLanguage(
                 result.languagesMap,
             )
+        }
+    }
+    private fun Flow<LanguageViewResult.ConfirmSelection>.toConfirmSelectionEffects(): Flow<ViewEffect> {
+        return mapLatest { result ->
+            LanguageViewEffect.ConfirmSelection
         }
     }
 

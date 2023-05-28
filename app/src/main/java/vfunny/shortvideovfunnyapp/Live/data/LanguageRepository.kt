@@ -52,13 +52,11 @@ class LanguageRepository {
         return callbackFlow {
             awaitClose {
                 if (languageMap.isNotEmpty()) {
-                    val languageArray: Array<Language> = languageMap.keys.toTypedArray()
-                    languageRef?.setValue(languageArray)
+                    val languageNames: List<String> = languageMap.filterValues { it }.keys.map { it.name }
+                    languageRef?.setValue(languageNames)
                         ?.addOnSuccessListener {
-                            Log.e("TAG", "setLanguages: ${languageMap.toMap()}", )
                             trySend(languageMap)
                         }?.addOnFailureListener { error ->
-                            Log.e("TAG", "setLanguages: $error", )
                             close(error)
                         }?.addOnCanceledListener {
                             close()

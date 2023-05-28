@@ -9,7 +9,7 @@ internal object NoOpResult : ViewResult()
 
 internal sealed class LanguageViewResult : ViewResult(){
     data class SelectLanguage(val languagesMap: MutableMap<Language, Boolean>) : LanguageViewResult()
-    object ConfirmSelection : LanguageViewResult()
+    data class ConfirmSelection(val languagesMap: MutableMap<Language, Boolean>) : LanguageViewResult()
     object CancelSelection : LanguageViewResult()
 }
 

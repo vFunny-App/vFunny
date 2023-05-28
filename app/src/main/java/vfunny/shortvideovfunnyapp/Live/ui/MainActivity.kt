@@ -70,6 +70,7 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
         val states = viewModel.states.onEach { state ->
             Log.e(TAG, "onCreate: adsEnabled ${state.adsEnabled}")
             Log.e(TAG, "onCreate: uploadData ${state.uploadData}")
+            Log.e(TAG, "onCreate: uploadData ${state.languagesMap}")
         }
 
         val effects = viewModel.effects.onEach { effect ->
@@ -80,6 +81,9 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
                 is LanguageViewEffect.SelectLanguage -> {
                     languageSelectionDialog.show()
                     languageSelectionDialog.showLanguageDialog(effect.languagesMap)
+                }
+                is LanguageViewEffect.ConfirmSelection -> {
+                    onLanguageSelected()
                 }
                 is TappedLanguageListEffect -> Log.e(TAG, "onCreate: $effect")
                 is TappedUpdatesNotifyEffect -> Log.e(TAG, "onCreate: ${effect.mediaUri}")
