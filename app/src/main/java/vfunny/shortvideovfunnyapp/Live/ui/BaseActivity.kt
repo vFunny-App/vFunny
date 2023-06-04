@@ -291,7 +291,7 @@ abstract class BaseActivity : AppCompatActivity() {
         dialogInterface: DialogInterface,
         language: Language,
     ) {
-        MaterialAlertDialogBuilder(applicationContext, android.R.style.Theme_Material_Dialog_Alert)
+        MaterialAlertDialogBuilder(this@BaseActivity, android.R.style.Theme_Material_Dialog_Alert)
             .setTitle("WARNING!")
             .setMessage("Are you sure you want to upload ${data.clipData?.itemCount ?: 1} file(s) as ${language.name}?")
             .setPositiveButton("Yes") { dialog, _ ->
