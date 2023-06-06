@@ -9,5 +9,5 @@ internal data class ViewState(
     val page: Int = 0,
     val showPlayer: Boolean = false,
     val videoData: List<VideoData>? = null,
-    val downloadList: MutableList<HashMap<Int, Int>> = mutableListOf()
+    val downloadList: List<HashMap<Int, Int>> = listOf()
 )

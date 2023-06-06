@@ -18,17 +18,23 @@ import kotlin.coroutines.CoroutineContext
 
 class AddWatermarkVideoBuilder(private val videoUrl: String) : DownloadWatermarkManager() {
     private var progressListener: ProgressListener? = null
+    private var page: Int = 0
 
     fun progressListener(progressListener: ProgressListener): AddWatermarkVideoBuilder {
         this.progressListener = progressListener
         return this
     }
 
+    fun setPage(page: Int): AddWatermarkVideoBuilder {
+        this.page = page
+        return this
+    }
     fun build() {
         val logoUrl = WATERMARK_LOGO_LINK
         val videoEndUrl = WATERMARK_END_SOUND_3
         val outputFilePath = createOutputFile()
         try {
+            progressListener?.onProgress(page,1) // Update progress to 25%
             Log.d(TAG, "addWatermarkVideo2: Download Started!")
 
             val videoLogoOutputFile = File.createTempFile("videoLogoOutputFile", ".mp4")
@@ -58,19 +64,19 @@ class AddWatermarkVideoBuilder(private val videoUrl: String) : DownloadWatermark
 
             FFmpegKit.executeAsync(commandToConcatVideoAndEnd) { session ->
                 if (ReturnCode.isSuccess(session.returnCode)) {
-                    progressListener?.onProgress(0,25) // Update progress to 25%
+                    progressListener?.onProgress(page,25) // Update progress to 25%
 
                     FFmpegKit.executeAsync(command2) { session2 ->
                         if (ReturnCode.isSuccess(session2.returnCode)) {
-                            progressListener?.onProgress(0,50) // Update progress to 50%
+                            progressListener?.onProgress(page,50) // Update progress to 50%
 
                             FFmpegKit.executeAsync(command3) { session3 ->
                                 if (ReturnCode.isSuccess(session3.returnCode)) {
-                                    progressListener?.onProgress(0,75) // Update progress to 75%
+                                    progressListener?.onProgress(page,75) // Update progress to 75%
 
                                     FFmpegKit.executeAsync(command4) { session4 ->
                                         if (ReturnCode.isSuccess(session4.returnCode)) {
-                                            progressListener?.onProgress(0,100) // Update progress to 100%
+                                            progressListener?.onProgress(page,100) // Update progress to 100%
                                             Log.d(
                                                 TAG,
                                                 "addWatermarkVideo2: Download Finished!",
@@ -83,7 +89,7 @@ class AddWatermarkVideoBuilder(private val videoUrl: String) : DownloadWatermark
                                                 "-i ${videoLogoOutputFile.absolutePath} -c copy $outputFilePath"
                                             FFmpegKit.executeAsync(command4_back) { command4back ->
                                                 if (ReturnCode.isSuccess(command4back.returnCode)) {
-                                                    progressListener?.onProgress(0,100) // Update progress to 100%
+                                                    progressListener?.onProgress(page,100) // Update progress to 100%
                                                     Log.d(
                                                         TAG,
                                                         "addWatermarkVideo2: Download Finished!!",
@@ -125,4 +131,5 @@ class AddWatermarkVideoBuilder(private val videoUrl: String) : DownloadWatermark
             Log.e(TAG, "addWatermarkVideo: Error in Convert Execution!")
         }
     }
+
 }

@@ -52,17 +52,17 @@ class VideoPagerFragment(
             } else {
                 appPlayerView.detachPlayer()
             }
-            if (!state.downloadList.isNullOrEmpty()) {
+            if (state.downloadList.isNotEmpty()) {
+                Log.e("@DOWNLOAD", "downloadList: Updated", )
                 val items = mutableListOf<DownloadButtonView.Item>()
-                for (pageMap in state.downloadList) {
-                    for ((pageNumber, progress) in pageMap) {
-                        Log.e("@DOWNLOAD", "downloadList: Updated", )
-                        Log.e("@DOWNLOAD", "Item $pageNumber Progress: $progress%", )
-                        val item = DownloadButtonView.Item("Item $pageNumber", "Progress: $progress%")
-                        items.add(item)
-                    }
+                for (pageMap in state.downloadList) pageMap.forEach { (pageNumber, progress) ->
+                    val item = DownloadButtonView.Item("Item $pageNumber", "Progress: $progress%")
+                    items.add(item)
                 }
+                binding.downloadView.visibility = View.VISIBLE
                 binding.downloadView.setItems(items)
+            } else {
+                binding.downloadView.visibility = View.GONE
             }
             // Restore any saved page state from process recreation and configuration changes.
             // Guarded by an isIdle check so that state emissions mid-swipe or during page change

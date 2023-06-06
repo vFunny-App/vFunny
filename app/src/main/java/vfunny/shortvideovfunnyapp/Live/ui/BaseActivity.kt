@@ -304,7 +304,12 @@ abstract class BaseActivity : AppCompatActivity() {
                         }
                     }
                     if (uriList.isNotEmpty()) {
-                        MediaUtils.uploadMultiplePhoto(uriList, language, this@BaseActivity)
+                        MediaUtils.uploadMultiplePhoto(uriList, language, this@BaseActivity) {
+                            // All items have been processed
+                            // Perform any necessary post-processing or UI updates
+                            Toast.makeText(this@BaseActivity, "Do not close for a few seconds..", Toast.LENGTH_SHORT).show()
+                        }
+
                     }
                 } else {
                     val filePath = data.data

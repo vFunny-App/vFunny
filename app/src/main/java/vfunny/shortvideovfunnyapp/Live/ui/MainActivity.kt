@@ -109,9 +109,6 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
             clicks.tryEmit(LanguageViewEvent.SelectLanguage)
         }
 //        clicks.tryEmit(TappedLanguageEvent)
-        if (showLanguage) {
-            clicks.tryEmit(LanguageViewEvent.SelectLanguage)
-        }
     }
 
     private fun viewEvents(): Flow<ViewEvent> {
@@ -249,6 +246,10 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
         binding.animationView.clearAnimation()
         binding.fragmentContainer.visibility = View.VISIBLE
         binding.loadingLyt.removeAllViewsInLayout()
+        if (showLanguage) {
+            clicks.tryEmit(LanguageViewEvent.SelectLanguage)
+            showLanguage = false
+        }
     }
 
     override fun showEmptyVideos() {

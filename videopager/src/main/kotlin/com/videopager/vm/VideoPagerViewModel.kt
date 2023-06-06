@@ -39,7 +39,7 @@ internal class VideoPagerViewModel(
             filterIsInstance<TappedPlayerEvent>().toTappedPlayerResults(),
             filterIsInstance<TappedWhatsappEvent>().toTappedWhatsappResults(),
             filterIsInstance<TappedShareEvent>().toTappedShareResults(),
-            filterIsInstance<TappedDownloadEvent>().toTappedDownloadResults(),
+            filterIsInstance<TappedDownloadEvent>().toDownloadVideoDataResults(),
             filterIsInstance<OnPageSettledEvent>().toPageSettledResults(),
             filterIsInstance<PauseVideoEvent>().toPauseVideoResults()
         )
@@ -141,37 +141,55 @@ internal class VideoPagerViewModel(
         }
     }
 
-    private fun Flow<TappedDownloadEvent>.toTappedDownloadResults(): Flow<ViewResult> {
+    private fun Flow<TappedDownloadEvent>.toDownloadVideoDataResults(): Flow<ViewResult> {
         return flatMapLatest {
             flow {
                 val videoData = requireNotNull(states.value.videoData)
                 val page = requireNotNull(states.value.page)
                 val mediaUri = videoData[page].mediaUri
-                val downloadList = requireNotNull(states.value.downloadList)
+                val currentDownloadList = requireNotNull(states.value.downloadList)
+
+                for (pageMap in currentDownloadList) {
+                    if (pageMap.containsKey(page)) {
+                        return@flow
+                    }
+                }
+                val downloadList: MutableList<HashMap<Int, Int>> = mutableListOf()
+                downloadList.addAll(currentDownloadList)
                 if (mediaUri.isNotEmpty()) {
                     val progressChannel = Channel<Int>() // Channel to receive progress updates
                     val progressJob = viewModelScope.launch(Dispatchers.IO) {
                         AddWatermarkVideoBuilder(mediaUri).progressListener(object :
                             ProgressListener {
                             override fun onProgress(page: Int, progress: Int) {
-                                if(downloadList.isEmpty()){
-                                    downloadList.add(hashMapOf(page to progress))
-                                } else for (pageMap in downloadList) {
-                                    if (pageMap.containsKey(page)) { // TODO need to handle multi click on download button
-                                        pageMap[progress] = progress
-                                        break
-                                    } else {
+                                viewModelScope.launch {
+                                    if (downloadList.isEmpty()) {
                                         downloadList.add(hashMapOf(page to progress))
+                                    } else {
+                                        for (pageMap in downloadList) {
+                                            if (pageMap.containsKey(page)) {
+                                                if (progress >= 100) {
+                                                    pageMap.remove(page)
+                                                    downloadList.remove(pageMap)
+                                                    break
+                                                }
+                                                pageMap[page] =
+                                                    progress // update progress for existing page
+                                                break
+                                            } else {
+                                                downloadList.add(hashMapOf(page to progress))
+                                            }
+                                        }
                                     }
+                                    progressChannel.send(progress)
                                 }
-                                launch { progressChannel.send(progress) }
                             }
-                        }).build()
+                        }).setPage(page).build()
                     }
 
                     // Emit progress updates from the channel as ViewResult
                     for (progress in progressChannel) {
-                        emit(DownloadVideoDataResult(downloadList))
+                        this.emit(DownloadVideoDataResult(downloadList.toList())) // create a new list to emit
                     }
 
                     // Cancel the progress job when the flow completes or is cancelled

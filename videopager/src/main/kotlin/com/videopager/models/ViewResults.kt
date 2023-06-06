@@ -14,7 +14,7 @@ internal data class LoadVideoDataResult(
 ) : ViewResult()
 
 internal data class DownloadVideoDataResult(
-    val downloadList: MutableList<HashMap<Int, Int>>
+    val downloadList: List<HashMap<Int, Int>>
 ) : ViewResult()
 
 internal data class CreatePlayerResult(val appPlayer: AppPlayer) : ViewResult()

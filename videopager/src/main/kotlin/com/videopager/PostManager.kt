@@ -8,10 +8,12 @@ import android.database.Cursor
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
 import android.net.Uri
+import android.os.Build
+import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
-import androidx.core.net.toUri
+import androidx.annotation.RequiresApi
 import com.arthenica.ffmpegkit.FFmpegKit
 import com.arthenica.ffmpegkit.ReturnCode
 import com.google.android.gms.tasks.Task
@@ -32,6 +34,7 @@ import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.CompletableFuture
 
 
 /**
@@ -108,25 +111,18 @@ class PostManager {
         }
     }
 
-    fun getFilePathFromContentUri(contentUri: Uri?, contentResolver: ContentResolver): String? {
-        val projection = arrayOf(MediaStore.MediaColumns.DATA)
-        val cursor: Cursor? = contentResolver.query(contentUri!!, projection, null, null, null)
-        if (cursor != null && cursor.moveToFirst()) {
-            val columnIndex: Int = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA)
-            val filePath: String = cursor.getString(columnIndex)
-            cursor.close()
-            return filePath
-        }
-        return null
-    }
-
-    fun execute(
+    @RequiresApi(Build.VERSION_CODES.N)
+    fun encodeHLS(
         context: Context,
         videoFile: String,
         language: Language,
         videoIndex: Int
-    ) {
-        showProgressDialog(context, "Uploading . . . ")
+    ): CompletableFuture<Unit> {
+        val future = CompletableFuture<Unit>()
+
+        Log.e(TAG, "Uploading . . . Item: $videoIndex")
+        showProgressDialog(context, "Uploading . . . Item: $videoIndex")
+
         val tempDir = File(context.cacheDir, "temp_hls_$videoIndex")
         val outDirPath = tempDir.absolutePath
         val currentTimeMillis = System.currentTimeMillis()
@@ -136,15 +132,14 @@ class PostManager {
         val masterName = "${dateTimeString}_$videoIndex"
         val playlistFileName = "$masterName.m3u8"
         val playlistFilePath = "$outDirPath/$playlistFileName"
-        val storageRef =
-            FirebaseStorage.getInstance().reference.child("stream/$language/$masterName/")
+        val storageRef = FirebaseStorage.getInstance().reference.child("stream/$language/$masterName/")
 
         tempDir.mkdirs()
 
         val arguments = "-y -i $videoFile" +
                 " -preset ultrafast -g 48 -sc_threshold 0 " +
                 "-map 0:0 -map 0:1 " +
-                "-c:0 libx264 -b:0 2000k " +
+                "-c:0 libx264 -b:0 350k " +
                 "-c:a copy " +
                 "-var_stream_map 'v:0,a:0' " +
                 "-f hls -hls_time 5 -hls_list_size 0 " +
@@ -154,8 +149,9 @@ class PostManager {
 
         FFmpegKit.executeAsync(arguments) { session ->
             if (ReturnCode.isSuccess(session.returnCode)) {
-                val itemCount = tempDir.listFiles()?.size;
+                val itemCount = tempDir.listFiles()?.size
                 if (itemCount == null || itemCount < 1) {
+                    future.complete(Unit)
                     return@executeAsync
                 }
 
@@ -163,9 +159,13 @@ class PostManager {
 
                 val downloadUrls = mutableListOf<String>()
 
+                val uploadTasks = mutableListOf<CompletableFuture<Unit>>()
+
                 tsFiles?.forEach { tsFile ->
                     val tsRef = storageRef.child(tsFile.name)
                     val tsFileUri = Uri.fromFile(tsFile)
+
+                    val uploadTask = CompletableFuture<Unit>()
 
                     tsRef.putFile(tsFileUri)
                         .addOnSuccessListener { taskSnapshot ->
@@ -173,9 +173,7 @@ class PostManager {
                                 .reference!!
                                 .downloadUrl
                                 .addOnCompleteListener { tsURL: Task<Uri> ->
-                                    downloadUrls.add(
-                                        tsURL.result.toString()
-                                    )
+                                    downloadUrls.add(tsURL.result.toString())
                                     if (downloadUrls.size == tsFiles.size) {
                                         // Update the playlist file with the new URLs
                                         updatePlaylistFile(
@@ -186,21 +184,37 @@ class PostManager {
                                             language,
                                             masterName,
                                             tempDir
-                                        )
+                                        ).thenAccept {
+                                            future.complete(Unit)
+                                        }
                                     }
                                 }
                             // Check if all files are uploaded and URLs are fetched
                         }
                         .addOnFailureListener { exception ->
-                            Log.e(TAG, "execute: $exception",)
+                            Log.e(TAG, "execute: $exception")
                             // Handle upload failure
+                            future.completeExceptionally(exception)
                         }
+
+                    uploadTasks.add(uploadTask)
                 }
+
+                CompletableFuture.allOf(*uploadTasks.toTypedArray())
+                    .exceptionally { exception ->
+                        future.completeExceptionally(exception)
+                        null
+                    }
+            } else {
+                future.completeExceptionally(Exception("FFmpeg execution failed"))
             }
         }
+
+        return future
     }
 
-    private fun updatePlaylistFile(
+    @RequiresApi(Build.VERSION_CODES.N)
+    fun updatePlaylistFile(
         playlistFilePath: String,
         downloadUrls: List<String>,
         storageRef: StorageReference,
@@ -208,14 +222,14 @@ class PostManager {
         language: Language,
         masterName: String,
         tempDir: File
-    ) {
+    ): CompletableFuture<Unit> {
+        val future = CompletableFuture<Unit>()
+
         val playlistFile = File(playlistFilePath)
         val updatedPlaylistLines = mutableListOf<String>()
 
         try {
             val reader = BufferedReader(FileReader(playlistFile))
-
-            // Read each line of the playlist file
             reader.useLines { lines ->
                 lines.forEach { line ->
                     if (line.trim().endsWith(".ts")) {
@@ -223,29 +237,25 @@ class PostManager {
                         val matchingUrl = downloadUrls.find { url ->
                             url.contains(fileName)
                         }
-
                         if (matchingUrl != null) {
-                            // Replace the segment file URL with the matching download URL
                             val updatedLine = line.replace(line, matchingUrl)
                             updatedPlaylistLines.add(updatedLine)
                         } else {
-                            // Use the original line if a matching URL is not found
                             updatedPlaylistLines.add(line)
                         }
                     } else {
-                        // Preserve other lines as is
                         updatedPlaylistLines.add(line)
                     }
                 }
             }
 
-            // Write the updated lines back to the playlist file
             val writer = FileWriter(playlistFile)
             updatedPlaylistLines.forEach { updatedLine ->
                 writer.write(updatedLine)
                 writer.write("\n")
             }
             writer.close()
+
             val m3u8Ref = storageRef.child(playlistFile.name)
             val m3u8FileUri = Uri.fromFile(playlistFile)
 
@@ -259,11 +269,7 @@ class PostManager {
                         .reference!!
                         .downloadUrl
                         .addOnCompleteListener { videoUri: Task<Uri> ->
-                            createThumbnailUploadTask(
-                                videoFile,
-                                language,
-                                masterName
-                            )
+                            createThumbnailUploadTask(videoFile, language, masterName)
                                 .addOnSuccessListener { thumbnailSnapshot: UploadTask.TaskSnapshot ->
                                     thumbnailSnapshot.metadata!!
                                         .reference!!.downloadUrl.addOnCompleteListener { thumbnailUri: Task<Uri> ->
@@ -272,30 +278,31 @@ class PostManager {
                                                 thumbnailUri.result.toString(),
                                                 language
                                             )
+                                            future.complete(Unit)
                                         }
                                 }
                         }
-                }.addOnFailureListener {
-                if (progressDialog.isShowing) {
-                    progressDialog.dismiss()
                 }
-                tempDir.deleteRecursively()
-                Log.e(TAG, "execute: $it")
-            }.addOnProgressListener { taskSnapshot: UploadTask.TaskSnapshot ->
-                val progress =
-                    100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount
-                progressDialog.setMessage("Uploading file : " + progress.toInt() + "%")
-            }
-            // Perform any further processing with the updated playlist file
-            // (e.g., upload the updated playlist file to Firebase Storage)
-
+                .addOnFailureListener {
+                    if (progressDialog.isShowing) {
+                        progressDialog.dismiss()
+                    }
+                    tempDir.deleteRecursively()
+                    future.completeExceptionally(it)
+                    Log.e(TAG, "execute: $it")
+                }
+                .addOnProgressListener { taskSnapshot: UploadTask.TaskSnapshot ->
+                    val progress =
+                        100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount
+                    progressDialog.setMessage("Uploading file: " + progress.toInt() + "%")
+                }
         } catch (e: IOException) {
             e.printStackTrace()
-            tempDir.deleteRecursively()
-            // Handle file operations error
+            future.completeExceptionally(e)
         }
-    }
 
+        return future
+    }
     private fun createThumbnailUploadTask(
         filePath: String,
         language: Language,
@@ -313,15 +320,6 @@ class PostManager {
         val metadata =
             StorageMetadata.Builder().setContentType("image/jpg").build()
         return imgref.putBytes(bytes, metadata)
-    }
-
-
-    private fun getAbsolutePath(uri: Uri, context: Context): String {
-        val filePathColumn = arrayOf(MediaStore.Video.Media.DATA)
-        val cursor = context.contentResolver.query(uri, filePathColumn, null, null, null)
-        cursor?.moveToFirst()
-        val columnIndex = cursor!!.getColumnIndex(filePathColumn[0])
-        return cursor.getString(columnIndex)
     }
 
     fun uploadPost(videoUrl: String, thumbnail: String, language: Language) {
