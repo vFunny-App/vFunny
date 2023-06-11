@@ -7,12 +7,11 @@ import coil.imageLoader
 import com.exo.players.ExoAppPlayerFactory
 import com.exo.ui.ExoAppPlayerViewFactory
 import com.player.models.VideoData
-import com.videopager.DownloadWatermarkManager
 import com.videopager.ui.VideoPagerFragment
 import com.videopager.vm.VideoPagerViewModelFactory
 import vfunny.shortvideovfunnyapp.Live.data.OneShotAssetVideoDataRepository
 
-class MainModule(activity: ComponentActivity, videoItemList: ArrayList<VideoData>) {
+class MainModule(activity: ComponentActivity,  videoItemList: ArrayList<VideoData>) {
     val fragmentFactory: FragmentFactory = object : FragmentFactory() {
         override fun instantiate(classLoader: ClassLoader, className: String): Fragment {
             return when (loadFragmentClass(classLoader, className)) {

@@ -1,6 +1,21 @@
 package com.videopager
 
+import android.app.Activity
+import android.content.ContentValues
+import android.content.Context
+import android.media.MediaPlayer
+import android.net.Uri
+import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
+import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
+import com.arthenica.ffmpegkit.FFprobeKit
+import com.arthenica.ffmpegkit.MediaInformationSession
+import com.arthenica.ffmpegkit.ReturnCode
+import java.io.File
+import java.io.FileInputStream
+import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -18,10 +33,15 @@ abstract class DownloadWatermarkManager {
         const val WATERMARK_LOGO_LINK =
             "https://firebasestorage.googleapis.com/v0/b/vfunnyapp-71911.appspot.com/o/watermark_logo.png?alt=media&token=b6d7f2d9-d242-42b2-ae97-a85c82d19647"
 
+        private val root = Environment.getExternalStorageDirectory().toString()
+        private val app_folder: String = "$root/vFunny/"
+
     }
-    fun createOutputFile(): String {
-        val outputDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
-        val dateFormat = SimpleDateFormat("h_mma_ddMMMyyyy", Locale.getDefault())
-        return "$outputDir/vfunny_${dateFormat.format(Date())}.mp4"
+
+    fun getDuration(videoUrl: String?): Long {
+//        val ffprobeCommand : MediaInformationSession = FFprobeKit.getMediaInformation(videoUrl)
+//        return ffprobeCommand.duration
+       return 0
     }
+
 }

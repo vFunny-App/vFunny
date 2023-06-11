@@ -291,7 +291,7 @@ abstract class BaseActivity : AppCompatActivity() {
         dialogInterface: DialogInterface,
         language: Language,
     ) {
-        MaterialAlertDialogBuilder(applicationContext, android.R.style.Theme_Material_Dialog_Alert)
+        MaterialAlertDialogBuilder(this@BaseActivity, android.R.style.Theme_Material_Dialog_Alert)
             .setTitle("WARNING!")
             .setMessage("Are you sure you want to upload ${data.clipData?.itemCount ?: 1} file(s) as ${language.name}?")
             .setPositiveButton("Yes") { dialog, _ ->
@@ -304,7 +304,12 @@ abstract class BaseActivity : AppCompatActivity() {
                         }
                     }
                     if (uriList.isNotEmpty()) {
-                        MediaUtils.uploadMultiplePhoto(uriList, language, this@BaseActivity)
+                        MediaUtils.uploadMultiplePhoto(uriList, language, this@BaseActivity) {
+                            // All items have been processed
+                            // Perform any necessary post-processing or UI updates
+                            Toast.makeText(this@BaseActivity, "Do not close for a few seconds..", Toast.LENGTH_SHORT).show()
+                        }
+
                     }
                 } else {
                     val filePath = data.data
@@ -321,10 +326,6 @@ abstract class BaseActivity : AppCompatActivity() {
             }
             .setCancelable(false)
             .show()
-    }
-
-    interface LanguageSelectionCallback {
-        fun onLanguageSelected()
     }
 
 }

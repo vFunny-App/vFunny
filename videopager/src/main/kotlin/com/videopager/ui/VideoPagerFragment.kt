@@ -1,9 +1,14 @@
 package com.videopager.ui
 
+import android.app.AlertDialog
+import android.app.ProgressDialog
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.ProgressBar
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -14,31 +19,80 @@ import androidx.viewpager2.widget.ViewPager2
 import coil.ImageLoader
 import com.google.android.material.snackbar.Snackbar
 import com.player.ui.AppPlayerView
+import com.videopager.DownloadWatermarkManager
 import com.videopager.R
 import com.videopager.databinding.VideoPagerFragmentBinding
 import com.videopager.models.*
 import com.videopager.ui.extensions.*
-import com.videopager.ui.views.DownloadButtonView
 import com.videopager.vm.VideoPagerViewModel
 import kotlinx.coroutines.flow.*
+import java.io.File
+import java.io.FileInputStream
+import java.io.InputStream
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class VideoPagerFragment(
     private val viewModelFactory: (SavedStateRegistryOwner) -> ViewModelProvider.Factory,
     private val appPlayerViewFactory: AppPlayerView.Factory,
-    private val imageLoader: ImageLoader
+    private val imageLoader: ImageLoader,
 ) : Fragment(R.layout.video_pager_fragment) {
     private val viewModel: VideoPagerViewModel by viewModels { viewModelFactory(this) }
     private lateinit var adapter: PagerAdapter
+    private var input_video_uri: File? = null
+    private lateinit var progressBar: ProgressBar
+    private lateinit var alertDialog: AlertDialog
+
+    private val saveVideoLauncher =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("video/mp4")) {
+            it?.let { uri ->
+                val out = requireActivity().contentResolver.openOutputStream(uri)
+                if (input_video_uri != null) {
+                    val ip: InputStream = FileInputStream(input_video_uri)
+                    out?.let {
+                        val buffer = ByteArray(1024)
+                        var read: Int
+                        while (ip.read(buffer).also { read = it } != -1) {
+                            out.write(buffer, 0, read)
+                        }
+                        ip.close()
+                        out.flush()
+                        out.close()
+                    }
+                    if (input_video_uri!!.isDirectory) {
+                        input_video_uri!!.listFiles()?.forEach { file ->
+                            if (!file.isDirectory) {
+                                file.delete()
+                            }
+                        }
+                    } else {
+                        input_video_uri!!.delete()
+                    }
+                    Toast.makeText(context, "Download Completed", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val binding = VideoPagerFragmentBinding.bind(view)
         // This single player view instance gets attached to the ViewHolder of the active ViewPager page
         val appPlayerView = appPlayerViewFactory.create(view.context)
-
         adapter = PagerAdapter(imageLoader)
         binding.viewPager.adapter = adapter
         binding.viewPager.offscreenPageLimit = 1// Preload neighbouring page image previews
+// Create the ProgressBar
+        progressBar = ProgressBar(requireContext(), null, android.R.attr.progressBarStyle)
+        progressBar.isIndeterminate = true
+
+// Create the AlertDialog
+        val builder = AlertDialog.Builder(requireContext())
+        builder.setTitle("Processing Video...")
+        builder.setMessage("Please Wait")
+        builder.setView(progressBar)
+        builder.setCancelable(false)
+        alertDialog = builder.create()
 
         val states = viewModel.states.onEach { state ->
             // Await the list submission so that the adapter list is in sync with state.videoData
@@ -52,17 +106,21 @@ class VideoPagerFragment(
             } else {
                 appPlayerView.detachPlayer()
             }
-            if (!state.downloadList.isNullOrEmpty()) {
-                val items = mutableListOf<DownloadButtonView.Item>()
-                for (pageMap in state.downloadList) {
-                    for ((pageNumber, progress) in pageMap) {
-                        Log.e("@DOWNLOAD", "downloadList: Updated", )
-                        Log.e("@DOWNLOAD", "Item $pageNumber Progress: $progress%", )
-                        val item = DownloadButtonView.Item("Item $pageNumber", "Progress: $progress%")
-                        items.add(item)
-                    }
+            if (state.downloadDialogState.isShowing) {
+                Log.e("@DOWNLOAD", "downloadList: Updated")
+                Log.e(
+                    "@DOWNLOAD",
+                    "downloadList: progress  : ${state.downloadDialogState.progress}"
+                )
+                alertDialog.setTitle("Downloading Video...")
+                alertDialog.setMessage("Please Wait")
+                if (!alertDialog.isShowing) {
+                    alertDialog.show()
                 }
-                binding.downloadView.setItems(items)
+            } else {
+                if (alertDialog.isShowing) {
+                    alertDialog.dismiss()
+                }
             }
             // Restore any saved page state from process recreation and configuration changes.
             // Guarded by an isIdle check so that state emissions mid-swipe or during page change
@@ -93,6 +151,17 @@ class VideoPagerFragment(
                 ).show()
 
                 is ShareWhatsappEffect -> shareToWhatsapp(effect.mediaUri)
+                is SaveVideoDataEffect -> {
+                    Log.e(DownloadWatermarkManager.TAG, "cancel: Cancelled 2")
+                    if (effect.outputFilePath.exists() && effect.outputFilePath.totalSpace != 0L) {
+                        val currentTimeMillis = System.currentTimeMillis()
+                        val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
+                        val dateTimeString = dateFormat.format(Date(currentTimeMillis))
+                        input_video_uri = effect.outputFilePath
+                        saveVideoLauncher.launch("Vfunny-$dateTimeString")
+                    }
+                }
+
                 is TappedShareEffect -> shareClick(effect.mediaUri)
             }
         }

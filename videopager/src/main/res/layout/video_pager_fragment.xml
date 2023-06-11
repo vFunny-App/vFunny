@@ -10,11 +10,4 @@
         android:layout_height="match_parent"
         android:orientation="vertical"/>
 
-    <com.videopager.ui.views.DownloadButtonView
-        android:id="@+id/download_view"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|start"
-        android:layout_margin="20dp"/>
-
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

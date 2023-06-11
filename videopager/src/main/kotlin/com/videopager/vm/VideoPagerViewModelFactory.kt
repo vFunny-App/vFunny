@@ -21,7 +21,6 @@ class VideoPagerViewModelFactory(
                 handle: SavedStateHandle,
             ): T {
                 val playerSavedStateHandle = PlayerSavedStateHandle(handle)
-
                 @Suppress("UNCHECKED_CAST")
                 return VideoPagerViewModel(
                     repository = repository,

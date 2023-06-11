@@ -7,4 +7,4 @@ internal val Context.layoutInflater: LayoutInflater get() = LayoutInflater.from(
 
 internal const val VIDEO_LIST = "VIDEO_LIST"
 internal const val VIDEO_URL = "VIDEO_URL"
-internal const val MAX_CACHED_VIDEOS = 3
+internal const val MAX_CACHED_VIDEOS = 5

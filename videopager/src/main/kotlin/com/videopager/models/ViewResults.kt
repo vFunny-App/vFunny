@@ -1,8 +1,10 @@
 package com.videopager.models
 
 import androidx.annotation.DrawableRes
+import com.player.models.DownloadDialogState
 import com.player.models.VideoData
 import com.player.players.AppPlayer
+import java.io.File
 
 internal sealed class ViewResult
 
@@ -14,8 +16,10 @@ internal data class LoadVideoDataResult(
 ) : ViewResult()
 
 internal data class DownloadVideoDataResult(
-    val downloadList: MutableList<HashMap<Int, Int>>
+    val downloadDialogState: DownloadDialogState
 ) : ViewResult()
+
+internal data class SaveVideoDataResult(val outputFilePath: File) : ViewResult()
 
 internal data class CreatePlayerResult(val appPlayer: AppPlayer) : ViewResult()
 
