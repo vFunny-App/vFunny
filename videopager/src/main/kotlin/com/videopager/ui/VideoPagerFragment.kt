@@ -1,10 +1,13 @@
 package com.videopager.ui
 
+import android.app.AlertDialog
 import android.app.ProgressDialog
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.ProgressBar
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -38,11 +41,13 @@ class VideoPagerFragment(
     private val viewModel: VideoPagerViewModel by viewModels { viewModelFactory(this) }
     private lateinit var adapter: PagerAdapter
     private var input_video_uri: File? = null
-    private lateinit var progressDialog: ProgressDialog
+    private lateinit var progressBar: ProgressBar
+    private lateinit var alertDialog: AlertDialog
+
     private val saveVideoLauncher =
         registerForActivityResult(ActivityResultContracts.CreateDocument("video/mp4")) {
-            it?.let {
-                val out = requireActivity().contentResolver.openOutputStream(it)
+            it?.let { uri ->
+                val out = requireActivity().contentResolver.openOutputStream(uri)
                 if (input_video_uri != null) {
                     val ip: InputStream = FileInputStream(input_video_uri)
                     out?.let {
@@ -55,6 +60,16 @@ class VideoPagerFragment(
                         out.flush()
                         out.close()
                     }
+                    if (input_video_uri!!.isDirectory) {
+                        input_video_uri!!.listFiles()?.forEach { file ->
+                            if (!file.isDirectory) {
+                                file.delete()
+                            }
+                        }
+                    } else {
+                        input_video_uri!!.delete()
+                    }
+                    Toast.makeText(context, "Download Completed", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -67,9 +82,17 @@ class VideoPagerFragment(
         adapter = PagerAdapter(imageLoader)
         binding.viewPager.adapter = adapter
         binding.viewPager.offscreenPageLimit = 1// Preload neighbouring page image previews
-        progressDialog = ProgressDialog(requireContext())
-        progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
-        progressDialog.setCancelable(false)
+// Create the ProgressBar
+        progressBar = ProgressBar(requireContext(), null, android.R.attr.progressBarStyle)
+        progressBar.isIndeterminate = true
+
+// Create the AlertDialog
+        val builder = AlertDialog.Builder(requireContext())
+        builder.setTitle("Processing Video...")
+        builder.setMessage("Please Wait")
+        builder.setView(progressBar)
+        builder.setCancelable(false)
+        alertDialog = builder.create()
 
         val states = viewModel.states.onEach { state ->
             // Await the list submission so that the adapter list is in sync with state.videoData
@@ -85,15 +108,18 @@ class VideoPagerFragment(
             }
             if (state.downloadDialogState.isShowing) {
                 Log.e("@DOWNLOAD", "downloadList: Updated")
-                progressDialog.setTitle("${state.downloadDialogState.title}")
-                progressDialog.setMessage("Saving... \n ${state.downloadDialogState.progress}%")
-                progressDialog.progress = state.downloadDialogState.progress
-                if (!progressDialog.isShowing) {
-                    progressDialog.show()
+                Log.e(
+                    "@DOWNLOAD",
+                    "downloadList: progress  : ${state.downloadDialogState.progress}"
+                )
+                alertDialog.setTitle("Downloading Video...")
+                alertDialog.setMessage("Please Wait")
+                if (!alertDialog.isShowing) {
+                    alertDialog.show()
                 }
             } else {
-                if (progressDialog.isShowing) {
-                    progressDialog.dismiss()
+                if (alertDialog.isShowing) {
+                    alertDialog.dismiss()
                 }
             }
             // Restore any saved page state from process recreation and configuration changes.
@@ -126,8 +152,8 @@ class VideoPagerFragment(
 
                 is ShareWhatsappEffect -> shareToWhatsapp(effect.mediaUri)
                 is SaveVideoDataEffect -> {
-                    Log.e(DownloadWatermarkManager.TAG, "cancel: Cancelled 2", )
-                    if(effect.outputFilePath.exists() && effect.outputFilePath.totalSpace!=0L) {
+                    Log.e(DownloadWatermarkManager.TAG, "cancel: Cancelled 2")
+                    if (effect.outputFilePath.exists() && effect.outputFilePath.totalSpace != 0L) {
                         val currentTimeMillis = System.currentTimeMillis()
                         val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
                         val dateTimeString = dateFormat.format(Date(currentTimeMillis))

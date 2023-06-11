@@ -39,8 +39,9 @@ abstract class DownloadWatermarkManager {
     }
 
     fun getDuration(videoUrl: String?): Long {
-        val ffprobeCommand : MediaInformationSession = FFprobeKit.getMediaInformation(videoUrl)
-        return ffprobeCommand.duration
+//        val ffprobeCommand : MediaInformationSession = FFprobeKit.getMediaInformation(videoUrl)
+//        return ffprobeCommand.duration
+       return 0
     }
 
 }

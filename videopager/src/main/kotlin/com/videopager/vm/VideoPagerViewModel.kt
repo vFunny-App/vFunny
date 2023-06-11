@@ -4,15 +4,15 @@ import android.util.Log
 import com.player.models.DownloadDialogState
 import com.player.players.AppPlayer
 import com.videopager.R
-import com.videopager.data.ProgressListener
 import com.videopager.data.VideoDataRepository
 import com.videopager.models.*
 import com.videopager.ui.extensions.ViewState
 import com.videopager.watermark.AddWatermarkVideoBuilder
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
-import java.io.File
+import kotlinx.coroutines.launch
 
 /**
  * Owns a stateful [ViewState.appPlayer] instance that will get created and torn down in parallel
@@ -22,7 +22,6 @@ internal class VideoPagerViewModel(
     private val repository: VideoDataRepository,
     private val appPlayerFactory: AppPlayer.Factory,
     private val handle: PlayerSavedStateHandle,
-    private val addWatermarkVideoBuilder: AddWatermarkVideoBuilder,
     initialState: ViewState,
 ) : MviViewModel<ViewEvent, ViewResult, ViewState, ViewEffect>(initialState) {
 
@@ -142,28 +141,34 @@ internal class VideoPagerViewModel(
 
     private fun Flow<TappedDownloadEvent>.toDownloadVideoDataResults(): Flow<ViewResult> {
         return flatMapLatest {
-                val videoData = requireNotNull(states.value.videoData)
-                val page = requireNotNull(states.value.page)
-                val mediaUri = videoData[page].mediaUri
-                callbackFlow {
-                    addWatermarkVideoBuilder.apply {
-                        setVideoUrl(mediaUri)
-                        setPage(page)
-                        progressListener(object : ProgressListener {
-                            override fun onProgress(progress: Int, count: Int?, log: String?) {
-                                if(progress<100)
-                                    trySend(DownloadVideoDataResult(DownloadDialogState(progress, log, true)))
-                                else if(progress==100)
-                                    trySend(DownloadVideoDataResult(DownloadDialogState(progress, log, false)))
-                                else if(getOutputFilePath().exists()) {
-                                        trySend(SaveVideoDataResult(getOutputFilePath()))
-                                    }
+            val videoData = requireNotNull(states.value.videoData)
+            val page = requireNotNull(states.value.page)
+            val mediaUri = videoData[page].mediaUri
+            val addWatermarkVideoBuilder = AddWatermarkVideoBuilder()
+            callbackFlow {
+                addWatermarkVideoBuilder.apply {
+                    setVideoUrl(mediaUri)
+                    setPage(page)
+                    onProgressListener { progress ->
+                        if (progress <= 100) {
+                            launch(Dispatchers.Main) {
+                                trySend(DownloadVideoDataResult(DownloadDialogState(progress, true)))
                             }
-                        })
+                        }
                     }
-                    addWatermarkVideoBuilder.build()
-                    awaitClose { addWatermarkVideoBuilder.cancel() }
+                    onCompletionListener { outputFilePath ->
+                        launch(Dispatchers.Main) {
+                            trySend(DownloadVideoDataResult(DownloadDialogState(0,false)))
+                            trySend(SaveVideoDataResult(outputFilePath))
+                            addWatermarkVideoBuilder.reset()
+                            close()
+                        }
+                    }
                 }
+                addWatermarkVideoBuilder.build()
+                awaitClose { addWatermarkVideoBuilder.cancel() }
+                Log.e("TAG", "toDownloadVideoDataResults: Finished", )
+            }
         }
     }
 
