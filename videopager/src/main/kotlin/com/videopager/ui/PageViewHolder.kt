@@ -455,14 +455,6 @@ internal class PageViewHolder(
                     progressView.isIndeterminate = true
                     progressView.visibility = View.VISIBLE
                 }
-                in 1..100 -> {
-                    progressView.isIndeterminate = false
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                        progressView.setProgress(downloadProgress, true)
-                    } else {
-                        progressView.progress = downloadProgress
-                    }
-                }
                 else -> {
                     progressView.visibility = View.INVISIBLE
                     progressView.isIndeterminate = false

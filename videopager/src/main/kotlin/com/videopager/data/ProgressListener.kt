@@ -1,5 +1,5 @@
 package com.videopager.data
 
 interface ProgressListener {
-    fun onProgress(page: Int, progress: Int)
+    fun onProgress(progress: Int, count: Int? = 1, log: String? = "no logs")
 }

@@ -1,8 +1,7 @@
 package com.videopager.vm
 
 import android.util.Log
-import android.widget.Toast
-import androidx.lifecycle.viewModelScope
+import com.player.models.DownloadDialogState
 import com.player.players.AppPlayer
 import com.videopager.R
 import com.videopager.data.ProgressListener
@@ -10,11 +9,10 @@ import com.videopager.data.VideoDataRepository
 import com.videopager.models.*
 import com.videopager.ui.extensions.ViewState
 import com.videopager.watermark.AddWatermarkVideoBuilder
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
+import java.io.File
 
 /**
  * Owns a stateful [ViewState.appPlayer] instance that will get created and torn down in parallel
@@ -24,6 +22,7 @@ internal class VideoPagerViewModel(
     private val repository: VideoDataRepository,
     private val appPlayerFactory: AppPlayer.Factory,
     private val handle: PlayerSavedStateHandle,
+    private val addWatermarkVideoBuilder: AddWatermarkVideoBuilder,
     initialState: ViewState,
 ) : MviViewModel<ViewEvent, ViewResult, ViewState, ViewEffect>(initialState) {
 
@@ -143,59 +142,28 @@ internal class VideoPagerViewModel(
 
     private fun Flow<TappedDownloadEvent>.toDownloadVideoDataResults(): Flow<ViewResult> {
         return flatMapLatest {
-            flow {
                 val videoData = requireNotNull(states.value.videoData)
                 val page = requireNotNull(states.value.page)
                 val mediaUri = videoData[page].mediaUri
-                val currentDownloadList = requireNotNull(states.value.downloadList)
-
-                for (pageMap in currentDownloadList) {
-                    if (pageMap.containsKey(page)) {
-                        return@flow
-                    }
-                }
-                val downloadList: MutableList<HashMap<Int, Int>> = mutableListOf()
-                downloadList.addAll(currentDownloadList)
-                if (mediaUri.isNotEmpty()) {
-                    val progressChannel = Channel<Int>() // Channel to receive progress updates
-                    val progressJob = viewModelScope.launch(Dispatchers.IO) {
-                        AddWatermarkVideoBuilder(mediaUri).progressListener(object :
-                            ProgressListener {
-                            override fun onProgress(page: Int, progress: Int) {
-                                viewModelScope.launch {
-                                    if (downloadList.isEmpty()) {
-                                        downloadList.add(hashMapOf(page to progress))
-                                    } else {
-                                        for (pageMap in downloadList) {
-                                            if (pageMap.containsKey(page)) {
-                                                if (progress >= 100) {
-                                                    pageMap.remove(page)
-                                                    downloadList.remove(pageMap)
-                                                    break
-                                                }
-                                                pageMap[page] =
-                                                    progress // update progress for existing page
-                                                break
-                                            } else {
-                                                downloadList.add(hashMapOf(page to progress))
-                                            }
-                                        }
+                callbackFlow {
+                    addWatermarkVideoBuilder.apply {
+                        setVideoUrl(mediaUri)
+                        setPage(page)
+                        progressListener(object : ProgressListener {
+                            override fun onProgress(progress: Int, count: Int?, log: String?) {
+                                if(progress<100)
+                                    trySend(DownloadVideoDataResult(DownloadDialogState(progress, log, true)))
+                                else if(progress==100)
+                                    trySend(DownloadVideoDataResult(DownloadDialogState(progress, log, false)))
+                                else if(getOutputFilePath().exists()) {
+                                        trySend(SaveVideoDataResult(getOutputFilePath()))
                                     }
-                                    progressChannel.send(progress)
-                                }
                             }
-                        }).setPage(page).build()
+                        })
                     }
-
-                    // Emit progress updates from the channel as ViewResult
-                    for (progress in progressChannel) {
-                        this.emit(DownloadVideoDataResult(downloadList.toList())) // create a new list to emit
-                    }
-
-                    // Cancel the progress job when the flow completes or is cancelled
-                    progressJob.cancel()
+                    addWatermarkVideoBuilder.build()
+                    awaitClose { addWatermarkVideoBuilder.cancel() }
                 }
-            }
         }
     }
 
@@ -224,7 +192,7 @@ internal class VideoPagerViewModel(
                 page = currentMediaItemIndex
             )
 
-            is DownloadVideoDataResult -> state.copy(downloadList = downloadList)
+            is DownloadVideoDataResult -> state.copy(downloadDialogState = downloadDialogState)
             is CreatePlayerResult -> state.copy(appPlayer = appPlayer)
             is TearDownPlayerResult -> state.copy(appPlayer = null)
             is OnNewPageSettledResult -> state.copy(page = page, showPlayer = false)
@@ -237,6 +205,7 @@ internal class VideoPagerViewModel(
     override fun Flow<ViewResult>.toEffects(): Flow<ViewEffect> {
         return merge(
             filterIsInstance<TappedPlayerResult>().toTappedPlayerEffects(),
+            filterIsInstance<SaveVideoDataResult>().toSaveVideoDataEffects(),
             filterIsInstance<TappedWhatsappResult>().toSendWhatsappEffects(),
             filterIsInstance<TappedShareResult>().toTappedShareEffects(),
             filterIsInstance<OnNewPageSettledResult>().toNewPageSettledEffects(),
@@ -246,6 +215,10 @@ internal class VideoPagerViewModel(
 
     private fun Flow<TappedPlayerResult>.toTappedPlayerEffects(): Flow<ViewEffect> {
         return mapLatest { result -> AnimationEffect(result.drawable) }
+    }
+
+    private fun Flow<SaveVideoDataResult>.toSaveVideoDataEffects(): Flow<ViewEffect> {
+        return mapLatest { result -> SaveVideoDataEffect(result.outputFilePath) }
     }
 
     private fun Flow<TappedWhatsappResult>.toSendWhatsappEffects(): Flow<ViewEffect> {

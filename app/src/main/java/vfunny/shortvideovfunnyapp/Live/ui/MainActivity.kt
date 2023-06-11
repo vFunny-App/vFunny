@@ -7,6 +7,8 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.commit
@@ -38,6 +40,11 @@ import kotlinx.coroutines.flow.onEach
 import vfunny.shortvideovfunnyapp.Live.ui.extensions.events
 import vfunny.shortvideovfunnyapp.models.*
 import vfunny.shortvideovfunnyapp.vm.MainActivityViewModelFactory
+import java.io.FileInputStream
+import java.io.InputStream
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class MainActivity : BaseActivity(), AuthManager.AuthListener {
     private val TAG: String = "MainActivity"
@@ -63,6 +70,7 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
         showLanguage = intent.getBooleanExtra("showLanguage", false)
         binding = MainActivityBinding.inflate(layoutInflater)
         initWelcomeAnimation()
+
         languageSelectionDialog = LanguageSelectionDialog(this) {
             clicks.tryEmit(it)
         }
