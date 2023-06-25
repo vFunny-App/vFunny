@@ -1,6 +1,5 @@
 package vfunny.shortvideovfunnyapp.Live.data
 
-import android.util.Log
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -8,8 +7,8 @@ import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.channelFlow
 import vfunny.shortvideovfunnyapp.Login.model.User
-import vfunny.shortvideovfunnyapp.Post.model.Const
 import vfunny.shortvideovfunnyapp.Post.model.Language
 
 class LanguageRepository {
@@ -49,20 +48,19 @@ class LanguageRepository {
     }
 
     fun setLanguages(languageMap: MutableMap<Language, Boolean>): Flow<MutableMap<Language, Boolean>> {
-        return callbackFlow {
-            awaitClose {
-                if (languageMap.isNotEmpty()) {
-                    val languageNames: List<String> = languageMap.filterValues { it }.keys.map { it.name }
-                    languageRef?.setValue(languageNames)
-                        ?.addOnSuccessListener {
-                            trySend(languageMap)
-                        }?.addOnFailureListener { error ->
-                            close(error)
-                        }?.addOnCanceledListener {
-                            close()
-                        }
-                }
+        return channelFlow {
+            if (languageMap.isNotEmpty()) {
+                val languageNames: List<String> = languageMap.filterValues { it }.keys.map { it.name }
+                languageRef?.setValue(languageNames)
+                    ?.addOnSuccessListener {
+                        trySend(languageMap).isSuccess
+                    }?.addOnFailureListener { error ->
+                        close(error)
+                    }?.addOnCanceledListener {
+                        close()
+                    }
             }
+            awaitClose()
         }
     }
 }

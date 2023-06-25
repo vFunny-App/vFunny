@@ -76,26 +76,30 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
         }
 
         val states = viewModel.states.onEach { state ->
-            Log.e(TAG, "onCreate: adsEnabled ${state.adsEnabled}")
-            Log.e(TAG, "onCreate: uploadData ${state.uploadData}")
-            Log.e(TAG, "onCreate: uploadData ${state.languagesMap}")
+            Log.e(TAG, "states: adsEnabled ${state.adsEnabled}")
+            Log.e(TAG, "states: uploadData ${state.uploadData}")
+            Log.e(TAG, "states: languagesMap ${state.languagesMap}")
+            Log.e(TAG, "states: isLoggedIn ${state.isLoggedIn}")
         }
 
         val effects = viewModel.effects.onEach { effect ->
             when (effect) {
-                is PageEffect -> Log.e(TAG, "onCreate: $effect.")
-                is AnimationEffect -> Log.e(TAG, "onCreate: ${effect.drawable}")
-                is ResetAnimationsEffect -> Log.e(TAG, "onCreate: $effect")
+                is PageEffect -> Log.e(TAG, "PageEffect: $effect.")
+                is AnimationEffect -> Log.e(TAG, "AnimationEffect: ${effect.drawable}")
+                is ResetAnimationsEffect -> Log.e(TAG, "ResetAnimationsEffect: $effect")
                 is LanguageViewEffect.SelectLanguage -> {
+                    Log.e(TAG, "LanguageViewEffect.SelectLanguage: ${effect.languagesMap.toMap()}")
                     languageSelectionDialog.show()
                     languageSelectionDialog.showLanguageDialog(effect.languagesMap)
                 }
                 is LanguageViewEffect.ConfirmSelection -> {
+                    Log.e(TAG, "LanguageViewEffect.ConfirmSelection: RESTART ACTIVITY INTENT")
                     onLanguageSelected()
                 }
-                is TappedLanguageListEffect -> Log.e(TAG, "onCreate: $effect")
-                is TappedUpdatesNotifyEffect -> Log.e(TAG, "onCreate: ${effect.mediaUri}")
-                is PlayerErrorEffect -> Log.e(TAG, "onCreate: ${effect.throwable}")
+                is TappedLanguageListEffect -> Log.e(TAG, "TappedLanguageListEffect: $effect")
+                is TappedUpdatesNotifyEffect -> Log.e(TAG, "TappedUpdatesNotifyEffect: ${effect.mediaUri}")
+                is PlayerErrorEffect -> Log.e(TAG, "PlayerErrorEffect: ${effect.throwable}")
+                else -> { Log.e(TAG, "viewModel.effects UNKNOWN EFFECT: $effect")}
             }
         }
 
@@ -109,6 +113,7 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
         if (User.currentKey() == null) {
             AuthManager.getInstance().showLogin(this) // Show login screen if user key is null
         } else {
+            Log.e(TAG, "User.currentKey() UserId userkey :  ${User.currentKey()}")
             fetchPosts()
         }
         setContentView(binding.root)
@@ -136,7 +141,7 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
         }
     }
 
-    fun onLanguageSelected() {
+    private fun onLanguageSelected() {
         val intent = Intent(this@MainActivity, MainActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(intent)

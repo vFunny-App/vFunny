@@ -1,19 +1,14 @@
 package vfunny.shortvideovfunnyapp.vm
 
 import android.util.Log
-import androidx.lifecycle.viewModelScope
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.GenericTypeIndicator
 import vfunny.shortvideovfunnyapp.Live.data.LanguageRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
-import kotlinx.coroutines.launch
-import vfunny.shortvideovfunnyapp.Login.model.User
-import vfunny.shortvideovfunnyapp.Post.model.Language
 import vfunny.shortvideovfunnyapp.models.*
 import vfunny.shortvideovfunnyapp.models.ViewEvent
 import vfunny.shortvideovfunnyapp.models.ViewResult
@@ -26,12 +21,7 @@ internal class MainActivityViewModel(
 ) : MviViewModel<ViewEvent, ViewResult, ViewState, ViewEffect>(initialState) {
 
     override fun onStart() {
-        viewModelScope.launch {
-            languageRepository.getLanguages()
-                .collect { languages ->
-                    processEvent(LoadLanguageEvent(languages))
-                }
-        }
+        processEvent(LoadLanguageEvent)
     }
 
     override fun Flow<ViewEvent>.toResults(): Flow<ViewResult> {
@@ -51,19 +41,6 @@ internal class MainActivityViewModel(
 
     private fun Flow<LanguageViewEvent.SelectLanguage>.toLoadLanguages(): Flow<ViewResult> {
         return mapLatest {
-            User.currentKey()?.let { userId ->
-                User.getLanguage(userId).get().addOnSuccessListener { dataSnapshot: DataSnapshot ->
-                    val allLanguage = Language.getAllLanguages().filter { it != Language.WORLDWIDE }
-                    // Get the selected languages from dataSnapshot
-                    val selectedLanguages =
-                        (dataSnapshot.getValue(object : GenericTypeIndicator<List<Language>>() {})
-                            ?.filter { it != Language.WORLDWIDE } ?: emptyList()).toMutableList()
-                    val languageMap = mutableMapOf<Language, Boolean>()
-                    for (language in allLanguage) {
-                        languageMap[language] = selectedLanguages.any { it.name == language.name }
-                    }
-                }
-            }
             val languagesMap = requireNotNull(states.value.languagesMap)
             LanguageViewResult.SelectLanguage(languagesMap)
         }
@@ -74,7 +51,9 @@ internal class MainActivityViewModel(
             Log.e("TAG", "toConfirmSelectionResults: ConfirmSelection ")
             flow {
                 languageRepository.setLanguages(it.languageMap)
-                emit(LanguageViewResult.ConfirmSelection(it.languageMap))
+                    .collect { languages ->
+                        emit(LanguageViewResult.ConfirmSelection(languages))
+                    }
             }
         }
     }
@@ -106,9 +85,10 @@ internal class MainActivityViewModel(
     }
 
     private fun Flow<LoadLanguageEvent>.toLoadLanguageResults(): Flow<ViewResult> {
-        return mapLatest { result ->
-            LoadLanguageResult(result.languagesMap)
-        }
+        return flatMapLatest { languageRepository.getLanguages() }
+            .map { languages ->
+                LoadLanguageResult(languages)
+            }
     }
 
     //TODO
@@ -146,6 +126,7 @@ internal class MainActivityViewModel(
             )
         }
     }
+
     private fun Flow<LanguageViewResult.ConfirmSelection>.toConfirmSelectionEffects(): Flow<ViewEffect> {
         return mapLatest { result ->
             LanguageViewEffect.ConfirmSelection

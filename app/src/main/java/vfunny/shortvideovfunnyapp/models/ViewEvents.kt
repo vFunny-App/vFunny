@@ -19,7 +19,7 @@ internal object ToggleAdsEvent : ViewEvent()
 
 internal object TappedUpdatesNotifyEvent : ViewEvent()
 
-internal data class LoadLanguageEvent(val languagesMap: MutableMap<Language, Boolean>) : ViewEvent()
+internal object LoadLanguageEvent : ViewEvent()
 
 internal object TappedLanguageListEvent : ViewEvent()
 
