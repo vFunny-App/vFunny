@@ -34,7 +34,7 @@ class PostsManager {
      */
     suspend fun getPosts(languageList: List<Language>): List<Post> = withContext(Dispatchers.IO) {
         // Determine the number of posts to fetch for each language based on the total number of languages to fetch
-        val langPostsCount = (100 / languageList.size)
+        val langPostsCount = (1000 / languageList.size)
         // Create an empty list of post lists
         val postsList = mutableListOf<List<Post?>>()
         // Create a deferred task for each language in the languageList

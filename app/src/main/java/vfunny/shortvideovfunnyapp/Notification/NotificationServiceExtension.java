@@ -42,7 +42,7 @@ public class NotificationServiceExtension implements OSRemoteNotificationReceive
                 // Add a button to take the user to the app store to download the update
                 Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=vfunny.shortvideovfunnyapp"));
                 PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-                builder.addAction(R.drawable.play, "Update", pendingIntent);
+                builder.addAction(com.videopager.R.drawable.play, "Update", pendingIntent);
                 // Remove the notification from the notification center after it is clicked
                 builder.setAutoCancel(true);
                 return builder;

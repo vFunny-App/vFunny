@@ -139,7 +139,7 @@ class PostManager {
         val arguments = "-y -i $videoFile" +
                 " -preset ultrafast -g 48 -sc_threshold 0 " +
                 "-map 0:0 -map 0:1 " +
-                "-c:0 libx264 -b:0 350k " +
+                "-c:0 libx264 -b:0 1000k " +
                 "-c:a copy " +
                 "-var_stream_map 'v:0,a:0' " +
                 "-f hls -hls_time 5 -hls_list_size 0 " +

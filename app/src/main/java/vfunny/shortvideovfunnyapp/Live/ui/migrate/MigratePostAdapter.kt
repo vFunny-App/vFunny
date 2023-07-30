@@ -331,7 +331,7 @@ class MigratePostAdapter(
                 precision(Precision.EXACT)
                 scale(Scale.FIT)
                 placeholder(R.drawable.logo)
-                error(R.drawable.btn_bg_danger)
+                error(com.videopager.R.drawable.btn_bg_danger)
             }
         }
     }

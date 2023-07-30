@@ -114,7 +114,7 @@ class AddWatermarkVideoBuilder : DownloadWatermarkManager() {
             }
             //Add logo to downloading video
             val command1 =
-                "-i $videoUrl -i $WATERMARK_LOGO_LINK -filter_complex \"[1]colorchannelmixer=aa=1,format=rgba,colorchannelmixer=aa=1,scale=iw*0.5:-1[a];[0][a]overlay=x='if(lt(mod(t\\,24)\\,12)\\,W-w-W*10/100\\,W*10/100)':y='if(lt(mod(t+6\\,24)\\,12)\\,H-h-H*5/100\\,H*5/100)'\" -c:v libx264 -preset fast -crf 23 ${videoLogoOutputFile.absolutePath}"
+                "-i $videoUrl -i $WATERMARK_LOGO_LINK -filter_complex \"[1]colorchannelmixer=aa=1,format=rgba,colorchannelmixer=aa=1,scale=iw*0.4:-1[a];[0][a]overlay=x='if(lt(mod(t\\,24)\\,12)\\,W-w-W*10/100\\,W*10/100)':y='if(lt(mod(t+6\\,24)\\,12)\\,H-h-H*5/100\\,H*5/100)'\" -c:v libx264 -preset fast -crf 23 ${videoLogoOutputFile.absolutePath}"
 
             if (executeFfmpegCommand(command1, getDuration(videoUrl), commandCount)) {
                 commandCount++
