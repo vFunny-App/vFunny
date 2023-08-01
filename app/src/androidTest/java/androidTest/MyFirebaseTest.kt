@@ -2,15 +2,14 @@ package androidTest
 
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
+import com.videopager.models.Post
 import org.junit.Before
 import org.junit.Test
-import vfunny.shortvideovfunnyapp.Post.model.Post
 import java.text.SimpleDateFormat
 import java.util.*
 

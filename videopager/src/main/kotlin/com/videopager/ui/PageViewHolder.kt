@@ -33,9 +33,7 @@ import com.google.firebase.storage.StorageReference
 import com.onesignal.OneSignal
 import com.player.models.VideoData
 import com.player.ui.AppPlayerView
-import com.squareup.okhttp.*
 import com.videopager.BuildConfig.BUILD_TYPE
-import com.videopager.DownloadWatermarkManager
 import com.videopager.PostManager
 import com.videopager.R
 import com.videopager.databinding.PageItemBinding
@@ -45,6 +43,8 @@ import com.videopager.models.PageEffect
 import com.videopager.models.ResetAnimationsEffect
 import com.videopager.ui.extensions.findParentById
 import kotlinx.coroutines.*
+import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.IOException
@@ -138,7 +138,7 @@ internal class PageViewHolder(
                 val notificationContent =
                     JSONObject("{'included_segments': ['Subscribed Users'], " + "'app_id': '$ONESIGNAL_APP_ID', " + "'headings': {'en': 'Check out this funny video! \uD83E\uDD23\uD83D\uDE06\uD83D\uDE02\uD83D\uDE05'}, " + "'contents': {'en': 'Look at this funny video \uD83D\uDE02. Fresh new memes available!'}, " + "'large_icon': '$thumbnailRef', " + "'big_picture': '$thumbnailRef', " + "'data': {'video_url': '$videoRef', 'thumbnail_url': '$thumbnailRef'}}")
                 val client = OkHttpClient()
-                val json = MediaType.parse("application/json; charset=utf-8")
+                val json = "application/json; charset=utf-8".toMediaTypeOrNull()
                 val body = RequestBody.create(json, notificationContent.toString())
 
                 // Create POST request and send it using OkHttp library
@@ -146,11 +146,12 @@ internal class PageViewHolder(
                     .addHeader("Authorization", "Basic $REST_API_KEY").post(body).build()
 
                 client.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(request: Request?, e: IOException?) {
+
+                    override fun onFailure(call: Call, e: IOException) {
                         Log.e(TAG, "onFailure: $e")
                     }
 
-                    override fun onResponse(response: Response?) {
+                    override fun onResponse(call: Call, response: Response) {
                         Log.e(TAG, "onResponse: $response")
                     }
                 })

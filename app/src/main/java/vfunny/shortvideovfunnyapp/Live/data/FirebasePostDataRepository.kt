@@ -1,6 +1,5 @@
 package vfunny.shortvideovfunnyapp.Live.data
 
-import com.firebase.ui.auth.data.model.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -14,7 +13,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 
 class FirebasePostDataRepository : VideoDataRepository {
-    private val database: DatabaseReference = FirebaseDatabase.getInstance().reference.child("posts")
+    private val database: DatabaseReference =
+        FirebaseDatabase.getInstance().reference.child("posts")
     private val currentUser: String? = FirebaseAuth.getInstance().uid
 
     override fun videoData(): Flow<List<VideoData>> = callbackFlow {
@@ -22,8 +22,11 @@ class FirebasePostDataRepository : VideoDataRepository {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val videoData = snapshot.children.mapNotNull { childSnapshot ->
                     val postId = childSnapshot.key.orEmpty()
-                    val mediaUri = childSnapshot.child("mediaUri").getValue(String::class.java).orEmpty()
-                    val previewImageUri = childSnapshot.child("previewImageUri").getValue(String::class.java).orEmpty()
+                    val mediaUri =
+                        childSnapshot.child("mediaUri").getValue(String::class.java).orEmpty()
+                    val previewImageUri =
+                        childSnapshot.child("previewImageUri").getValue(String::class.java)
+                            .orEmpty()
                     val width = childSnapshot.child("width").getValue(Int::class.java)
                     val height = childSnapshot.child("height").getValue(Int::class.java)
                     val aspectRatio = calculateAspectRatio(width, height)

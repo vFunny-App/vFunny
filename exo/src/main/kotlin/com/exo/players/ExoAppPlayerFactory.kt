@@ -28,7 +28,7 @@ class ExoAppPlayerFactory(context: Context) : AppPlayer.Factory {
             .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
         val loadControl: LoadControl = DefaultLoadControl.Builder()
             .setBufferDurationsMs(1000, 5000, 1000, 1000)
-            .createDefaultLoadControl()
+            .build()
         val exoPlayer = ExoPlayer.Builder(appContext)
             .setMediaSourceFactory(DefaultMediaSourceFactory(cacheDataSourceFactory))
             .setLoadControl(loadControl)

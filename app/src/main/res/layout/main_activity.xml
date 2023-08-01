@@ -44,17 +44,6 @@
         android:layout_below="@+id/fragment_container"
         android:orientation="vertical">
 
-        <ProgressBar
-            android:id="@+id/progress_circular"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:layout_marginBottom="48dp"
-            android:progressTint="@android:color/holo_orange_light"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:indeterminate="true"
-            style="@style/Widget.MaterialProgressBar.ProgressBar"
-            app:layout_constraintStart_toStartOf="parent" />
 
         <com.airbnb.lottie.LottieAnimationView
             android:id="@+id/animation_view"
@@ -68,6 +57,17 @@
             app:lottie_rawRes="@raw/welcome_anim"
             app:lottie_speed="2" />
 
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/progress_circular"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_marginBottom="48dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:indicatorColor="@color/app_color"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:indeterminate="true"
+            android:visibility="invisible"
+            app:layout_constraintStart_toStartOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -76,9 +76,7 @@
         android:layout_height="match_parent"
         android:layout_above="@+id/migratelistBtn"
         android:layout_alignParentStart="true"
-        android:layout_marginStart="@dimen/fui_auth_method_button_margin"
-        android:layout_marginTop="@dimen/fui_auth_method_button_margin"
-        android:layout_marginEnd="@dimen/fui_auth_method_button_margin"
+        android:layout_margin="@dimen/fab_margin"
         android:backgroundTint="#B7B7B7"
         android:contentDescription="add"
         app:backgroundTint="@color/app_color"
@@ -91,9 +89,7 @@
         android:layout_height="match_parent"
         android:layout_above="@+id/listBtn"
         android:layout_alignParentStart="true"
-        android:layout_marginStart="@dimen/fui_auth_method_button_margin"
-        android:layout_marginTop="@dimen/fui_auth_method_button_margin"
-        android:layout_marginEnd="@dimen/fui_auth_method_button_margin"
+        android:layout_margin="@dimen/fab_margin"
         android:backgroundTint="#B7B7B7"
         android:contentDescription="add"
         app:maxImageSize="40dp"
@@ -124,10 +120,7 @@
         android:layout_height="match_parent"
         android:layout_alignParentStart="true"
         android:layout_alignParentBottom="true"
-        android:layout_marginStart="@dimen/fui_auth_method_button_margin"
-        android:layout_marginTop="@dimen/fui_auth_method_button_margin"
-        android:layout_marginEnd="@dimen/fui_auth_method_button_margin"
-        android:layout_marginBottom="@dimen/fui_auth_method_button_margin"
+        android:layout_margin="@dimen/fab_margin"
         android:backgroundTint="#B7B7B7"
         android:contentDescription="add"
         app:maxImageSize="40dp"
@@ -141,7 +134,7 @@
         android:layout_height="match_parent"
         android:layout_alignParentEnd="true"
         android:layout_alignParentBottom="true"
-        android:layout_margin="@dimen/fui_auth_method_button_margin"
+        android:layout_margin="@dimen/fab_margin"
         android:backgroundTint="#B7B7B7"
         android:contentDescription="add"
         android:src="@android:drawable/ic_input_add" />
@@ -151,11 +144,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_above="@+id/addCard"
-        android:layout_alignStart="@+id/addCard"
         android:layout_alignParentEnd="true"
-        android:layout_marginTop="@dimen/fui_auth_method_button_margin"
-        android:layout_marginEnd="@dimen/fui_auth_method_button_margin"
-        android:layout_marginBottom="@dimen/fui_auth_method_button_margin"
+        android:layout_margin="@dimen/fab_margin"
         android:backgroundTint="#B7B7B7"
         android:clickable="true"
         app:cardCornerRadius="30dp">
@@ -177,7 +167,7 @@
         android:layout_height="wrap_content"
         android:layout_above="@+id/addBtn"
         android:layout_alignParentEnd="true"
-        android:layout_margin="@dimen/fui_auth_method_button_margin"
+        android:layout_margin="@dimen/fab_margin"
         app:cardCornerRadius="30dp">
 
         <androidx.appcompat.widget.SwitchCompat
