@@ -3,13 +3,13 @@ package vfunny.shortvideovfunnyapp.Live.data
 import android.util.Log
 import com.player.models.VideoData
 import com.videopager.data.VideoDataRepository
-import kotlinx.coroutines.DelicateCoroutinesApi
+import com.videopager.models.PostCollection
+import com.videopager.models.VideoDataPaged
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import vfunny.shortvideovfunnyapp.Live.ui.BaseActivity
 import vfunny.shortvideovfunnyapp.Login.model.User
 import vfunny.shortvideovfunnyapp.Post.PostUtils.PostsManager
-import vfunny.shortvideovfunnyapp.Post.model.Language
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -23,42 +23,48 @@ class StreamingAssetVideoDataRepository() : VideoDataRepository {
 
     override fun videoData(): Flow<List<VideoData>> {
         return flow {
-            val isAdsEnabledDeferred =  fetchAdsEnabled()
-            val languageListDeferred =  fetchLanguageList()
-
-            Log.i(TAG, "Final Data : isAdsEnabled $isAdsEnabledDeferred")
-            Log.i(TAG, "Final Data : languageList ${languageListDeferred.size}")
-
-            val unwatchedPosts = PostsManager.instance.getPosts(languageListDeferred)
+            val isAdsEnabled : Boolean =  fetchAdsEnabled()
+            val userSelectedLanguageList :  List<VideoDataPaged> =  fetchLanguageList()
+            Log.i(TAG, "Final Data : isAdsEnabled $isAdsEnabled")
+            Log.i(TAG, "Final Data : userSelectedLanguageList size ${userSelectedLanguageList.size}")
+            var getPostIterationCounter = 0
             var count = 0
-            var videoCount = 0
-            unwatchedPosts.forEach {
-                count++
-                videoCount++
-                videoItemList.add(
-                    VideoData(
-                        count.toString(),
-                        it.video ?: "",
-                        it.image ?: "",
-                        key = it.key,
-                        language = it.language,
-                        timestamp = it.timestamp
-                    )
+            while (count < 1000) {
+                val unwatchedPostCollection : PostCollection  = PostsManager.instance.getPosts(
+                    userSelectedLanguageList
                 )
-                val totalItemCount = BaseActivity.ITEM_COUNT_THRESHOLD
-                if (isAdsEnabledDeferred && videoCount % BaseActivity.ADS_FREQUENCY == 0 && videoCount != totalItemCount) {
+                var videoCount = 0
+                unwatchedPostCollection.alternateList?.forEach {
                     count++
+                    videoCount++
                     videoItemList.add(
                         VideoData(
                             count.toString(),
-                            "",
-                            "",
-                            type = BaseActivity.ADS_TYPE
+                            it.video ?: "",
+                            it.image ?: "",
+                            key = it.key,
+                            language = it.language,
+                            timestamp = it.timestamp
                         )
                     )
+                    val totalItemCount = BaseActivity.ITEM_COUNT_THRESHOLD
+                    if (isAdsEnabled && videoCount % BaseActivity.ADS_FREQUENCY == 0 && videoCount != totalItemCount) {
+                        count++
+                        videoItemList.add(
+                            VideoData(
+                                count.toString(),
+                                "",
+                                "",
+                                type = BaseActivity.ADS_TYPE
+                            )
+                        )
+                    }
                 }
+                getPostIterationCounter ++
+                Log.i(TAG, "Final Output emit videoItemList size ${videoItemList.size}")
+                Log.i(TAG, "Final Output Post iteration Counter $getPostIterationCounter")
+                emit(videoItemList)
             }
-            emit(videoItemList)
         }
     }
 
@@ -70,13 +76,17 @@ class StreamingAssetVideoDataRepository() : VideoDataRepository {
         }
     }
 
-    private suspend fun fetchLanguageList(): List<Language> {
+    private suspend fun fetchLanguageList(): List<VideoDataPaged> {
         return suspendCoroutine { continuation ->
             User().getCurrentUser { user ->
+                val list = mutableListOf<VideoDataPaged>()
                 if (user != null) {
-                    continuation.resume(user.language)
+                    user.language.forEach {
+                        list.add(VideoDataPaged(1,it))
+                    }
+                    continuation.resume(list)
                 } else {
-                    continuation.resume(Language.getAllLanguages()) // Provide a default value here
+                    continuation.resume(emptyList()) // Provide a default value here
                 }
             }
         }

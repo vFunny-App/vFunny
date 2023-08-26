@@ -14,6 +14,8 @@ import vfunny.shortvideovfunnyapp.Login.model.User
 import vfunny.shortvideovfunnyapp.Post.model.Const
 import vfunny.shortvideovfunnyapp.Post.model.Language
 import com.videopager.models.Post
+import com.videopager.models.PostCollection
+import com.videopager.models.VideoDataPaged
 
 /**
  * Created by shresthasaurabh86@gmail.com 09/05/2023.
@@ -32,18 +34,23 @@ class PostsManager {
      * @param languageList list of languages to fetch posts for
      * @return list of posts
      */
-    suspend fun getPosts(languageList: List<Language>): List<Post> = withContext(Dispatchers.IO) {
-        // Determine the number of posts to fetch for each language based on the total number of languages to fetch
-        val langPostsCount = (1000 / languageList.size)
-        // Create an empty list of post lists
-        val postsList = mutableListOf<List<Post?>>()
-        // Create a deferred task for each language in the languageList
-        val deferredList = languageList.map { language -> fetchPosts(langPostsCount, language) }
-        // Wait for all deferred tasks to complete and add each list of posts to the post list
-        deferredList.awaitAll().forEach { postsList.add(it.filterNotNull()) }
-        // Combine all lists of posts into a single list and remove any null elements
-        return@withContext alternateLists(postsList)
-    }
+    suspend fun getPosts(videoDataPagedList: List<VideoDataPaged>): PostCollection =
+        withContext(Dispatchers.IO) {
+            // Create an empty list of post lists
+            val postsList = mutableListOf<List<Post>>()
+            val listOfMappedPostsList = mutableListOf<Map<Language, List<Post>>>()
+            // Create a deferred task for each language in the languageList
+            val deferredList = videoDataPagedList.map { videoDataPaged -> fetchPosts(videoDataPaged) }
+            // Wait for all deferred tasks to complete and add each list of posts to the post list
+            deferredList.awaitAll().forEach { mappedPostsList ->
+                listOfMappedPostsList.add(mappedPostsList)
+                mappedPostsList.values.forEach {
+                    postsList.add(it)
+                }
+            }
+            // Combine all lists of posts into a single list and remove any null elements
+            return@withContext PostCollection(listOfMappedPostsList, alternateLists(postsList))
+        }
 
     /**
      * Combines multiple lists of posts into a single list, removing any null elements
@@ -73,33 +80,35 @@ class PostsManager {
      * @return A list of Post objects fetched from the Realtime Database for the specified language.
      */
     private suspend fun fetchPosts(
-        langPostsCount: Int,
-        language: Language,
-    ): CompletableDeferred<List<Post?>> = withContext(Dispatchers.IO) {
+        videoDataPaged: VideoDataPaged,
+    ): CompletableDeferred<Map<Language, List<Post>>> = withContext(Dispatchers.IO) {
+        val langPostsCount = 10 * videoDataPaged.lastIndex
         // Get a reference to the posts node in the Realtime Database for the specified language
         // If the build type is "admin" or "adminDebug", fetch all posts for the specified language
-        val deferred = CompletableDeferred<List<Post?>>()
+        val deferred = CompletableDeferred<Map<Language, List<Post>>>()
         val query =
             if (BUILD_TYPE == "admin" || BUILD_TYPE == "adminDebug") FirebaseDatabase.getInstance()
-                .getReference("posts_${language.code}").limitToLast(langPostsCount)
+                .getReference("posts_${videoDataPaged.language.code}").limitToLast(langPostsCount)
             else
             // Otherwise, fetch only posts that haven't been watched by the current user
-                FirebaseDatabase.getInstance().getReference("posts_${language.code}")
+                FirebaseDatabase.getInstance().getReference("posts_${videoDataPaged.language.code}")
                     .orderByChild("${Const.kWatchedBytKey}/${User.currentKey()}").equalTo(null)
                     .limitToLast(langPostsCount)
 // Retrieve the data from the Realtime Database and map it to a list of Post objects
         query.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val posts = snapshot.children.reversed().mapNotNull { dataSnapshot ->
-                    Post.deserialize(dataSnapshot, language)
+                    Post.deserialize(dataSnapshot, videoDataPaged.language)
                 }
-                deferred.complete(posts)
+                val sublist = posts.subList(videoDataPaged.lastIndex - 1, posts.size - 1)
+                val subListMapped: Map<Language, List<Post>> = mapOf(videoDataPaged.language to sublist)
+                deferred.complete(subListMapped)
             }
 
             override fun onCancelled(error: DatabaseError) {
                 // If an error occurs, log the error and return an empty list
-                Log.e(TAG, "Error fetching posts for language $language", error.toException())
-                deferred.complete(emptyList())
+                Log.e(TAG, "Error fetching posts for language $videoDataPaged.language", error.toException())
+                deferred.complete(emptyMap<Language, List<Post>>())
             }
         })
         return@withContext deferred
