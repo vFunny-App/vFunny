@@ -13,6 +13,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:screenOrientation="portrait"
         android:supportsRtl="true"
+        android:hardwareAccelerated="true"
         android:theme="@style/Theme.Exoviewpagerfun">
         <activity
             android:name=".Lang.ui.LangListActivity"
@@ -43,6 +44,10 @@
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="@string/APP_ID" />
+
+        <meta-data
+            android:name="com.google.android.gms.ads.AD_MANAGER_APP"
+            android:value="true" />
 
         <service android:name="com.exo.service.VideoPreLoadingService" /> <!-- name doesn't change, value = your class fully name spaced -->
         <meta-data

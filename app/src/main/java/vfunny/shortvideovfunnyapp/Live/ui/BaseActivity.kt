@@ -38,7 +38,6 @@ import vfunny.shortvideovfunnyapp.Post.model.Language
 import java.io.IOException
 
 abstract class BaseActivity : AppCompatActivity() {
-    val videoItemList = ArrayList<VideoData>()
     var isAdsEnabled: Boolean = false
     private var notificationVideoUrl: String? = null
     private var notificationThumbnailUrl: String? = null
@@ -50,7 +49,7 @@ abstract class BaseActivity : AppCompatActivity() {
         const val REST_API_KEY = "MzBhMWIzODMtY2U3OC00OTlhLTkwMDEtM2UxZWExYjU5Nzg5"
         const val ADS_TYPE = "ads"
         const val ITEM_COUNT_THRESHOLD = 5
-        const val ADS_FREQUENCY = 5
+        const val ADS_FREQUENCY = 9
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -170,42 +169,7 @@ abstract class BaseActivity : AppCompatActivity() {
                     }
                     Log.e(TAG, "user languageList size : ${languageList.size}")
                     Log.e(TAG, "Getting POSTS")
-                    lifecycleScope.launch {
-                        val unwatchedPosts = PostsManager.instance.getPosts(languageList)
-                        var count = 0
-                        var videoCount = 0
-                        // Do something with the posts
-                        Log.d(TAG, "onDataChange: unwatchedPosts.size ${unwatchedPosts.size}")
-                        // Pass the list of unwatched posts to your application
-//                        videoItemList.add(VideoData("0",
-//                            mediaUri = "https://firebasestorage.googleapis.com/v0/b/vfunnyapp-71911.appspot.com/o/stream%2Fstream1.m3u8?alt=media&token=7914103c-1d0b-4644-be43-2e4c4cfeba13",
-//                            previewImageUri = "",
-//                            language = Language.WORLDWIDE
-//                        ))
-                        unwatchedPosts.forEach {
-                            count++
-                            videoCount++
-                            videoItemList.add(VideoData(count.toString(),
-                                it.video ?: "",
-                                it.image ?: "",
-                                key = it.key,
-                                language = it.language,
-                                timestamp = it.timestamp))
-                            val totalItemCount = ITEM_COUNT_THRESHOLD
-                            if (isAdsEnabled && videoCount % ADS_FREQUENCY == 0 && videoCount != totalItemCount) {
-                                count++
-                                videoItemList.add(VideoData(count.toString(),
-                                    "",
-                                    "",
-                                    type = ADS_TYPE))
-                            }
-                        }
-                        if(videoItemList.size == 0) {
-                            showEmptyVideos()
-                            return@launch
-                        }
-                        showVideos(videoItemList)
-                    }
+                    showVideos()
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -223,7 +187,8 @@ abstract class BaseActivity : AppCompatActivity() {
 
     abstract fun addAdminButtons()
 
-    abstract fun showVideos(videoItemList: ArrayList<VideoData>)
+    abstract fun showVideos(
+    )
     abstract fun showEmptyVideos()
 
     override fun onRequestPermissionsResult(

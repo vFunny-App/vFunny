@@ -7,8 +7,6 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Toast
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.commit
@@ -38,13 +36,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
 import vfunny.shortvideovfunnyapp.Live.ui.extensions.events
+import vfunny.shortvideovfunnyapp.Post.model.Language
 import vfunny.shortvideovfunnyapp.models.*
 import vfunny.shortvideovfunnyapp.vm.MainActivityViewModelFactory
-import java.io.FileInputStream
-import java.io.InputStream
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class MainActivity : BaseActivity(), AuthManager.AuthListener {
     private val TAG: String = "MainActivity"
@@ -249,9 +243,9 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
         binding.updateNotification.setOnClickListener { showUpdateNotificationConfirmationDialog() }
     }
 
-    override fun showVideos(videoItemList: ArrayList<VideoData>) {
-        Log.d(TAG, "onDataChange: FINAL videoItemList.size ${videoItemList.size}")
-        val module = MainModule(this, videoItemList)
+    override fun showVideos(
+    ) {
+        val module = MainModule(this)
         supportFragmentManager.fragmentFactory = module.fragmentFactory
         supportFragmentManager.commit {
             replace<VideoPagerFragment>(binding.fragmentContainer.id)

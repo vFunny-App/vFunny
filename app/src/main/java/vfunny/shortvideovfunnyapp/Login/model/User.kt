@@ -1,5 +1,6 @@
 package vfunny.shortvideovfunnyapp.Login.model
 
+import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import vfunny.shortvideovfunnyapp.Post.model.Const
@@ -15,6 +16,26 @@ class User {
     var photo: String? = null
     var language: List<Language> = Language.getAllLanguages()
 
+    // Function to fetch the User model of the current user
+    fun getCurrentUser(callback: (User?) -> Unit) {
+        val currentUserId = currentKey()
+
+        if (currentUserId != null) {
+            val userReference = collection(currentUserId)
+            userReference.addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val user = snapshot.getValue(User::class.java)
+                    callback(user)
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    callback(null)
+                }
+            })
+        } else {
+            callback(null)
+        }
+    }
 
     companion object {
 
@@ -24,6 +45,20 @@ class User {
             return FirebaseDatabase.getInstance().getReference(Const.kAdsKey)
         }
 
+        fun isAdsEnabled(callback: (Boolean) -> Unit) {
+            val adsKeyReference = FirebaseDatabase.getInstance().getReference(Const.kAdsKey)
+            adsKeyReference.addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val isEnabled = snapshot.getValue(Boolean::class.java) ?: false
+                    callback(isEnabled)
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    // Handle error if data retrieval is unsuccessful
+                    callback(false)
+                }
+            })
+        }
         fun collection(): DatabaseReference {
             return FirebaseDatabase.getInstance().getReference(Const.kUsersKey)
         }

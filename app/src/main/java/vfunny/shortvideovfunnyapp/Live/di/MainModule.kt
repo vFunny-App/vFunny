@@ -9,16 +9,19 @@ import com.exo.ui.ExoAppPlayerViewFactory
 import com.player.models.VideoData
 import com.videopager.ui.VideoPagerFragment
 import com.videopager.vm.VideoPagerViewModelFactory
-import vfunny.shortvideovfunnyapp.Live.data.OneShotAssetVideoDataRepository
+import vfunny.shortvideovfunnyapp.Live.data.StreamingAssetVideoDataRepository
+import vfunny.shortvideovfunnyapp.Post.model.Language
 
-class MainModule(activity: ComponentActivity,  videoItemList: ArrayList<VideoData>) {
+class MainModule(
+    activity: ComponentActivity
+) {
     val fragmentFactory: FragmentFactory = object : FragmentFactory() {
         override fun instantiate(classLoader: ClassLoader, className: String): Fragment {
             return when (loadFragmentClass(classLoader, className)) {
                 VideoPagerFragment::class.java -> VideoPagerFragment(
                     viewModelFactory = { owner ->
                         VideoPagerViewModelFactory(
-                            repository = OneShotAssetVideoDataRepository(videoItemList),
+                            repository = StreamingAssetVideoDataRepository(),
                             appPlayerFactory = ExoAppPlayerFactory(
                                 context = activity.applicationContext
                             )
@@ -27,6 +30,7 @@ class MainModule(activity: ComponentActivity,  videoItemList: ArrayList<VideoDat
                     appPlayerViewFactory = ExoAppPlayerViewFactory(),
                     imageLoader = activity.imageLoader
                 )
+
                 else -> super.instantiate(classLoader, className)
             }
         }
