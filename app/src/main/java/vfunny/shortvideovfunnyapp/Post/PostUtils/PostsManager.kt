@@ -102,6 +102,7 @@ class PostsManager {
                 }
                 val sublist = posts.subList(videoDataPaged.lastIndex - 1, posts.size - 1)
                 val subListMapped: Map<Language, List<Post>> = mapOf(videoDataPaged.language to sublist)
+                videoDataPaged.lastIndex = posts.size
                 deferred.complete(subListMapped)
             }
 

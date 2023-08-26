@@ -2,6 +2,7 @@ package com.videopager.ui
 
 import android.app.AlertDialog
 import android.app.ProgressDialog
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -38,11 +39,13 @@ class VideoPagerFragment(
     private val appPlayerViewFactory: AppPlayerView.Factory,
     private val imageLoader: ImageLoader,
 ) : Fragment(R.layout.video_pager_fragment) {
+
     private val viewModel: VideoPagerViewModel by viewModels { viewModelFactory(this) }
     private lateinit var adapter: PagerAdapter
     private var input_video_uri: File? = null
     private lateinit var progressBar: ProgressBar
     private lateinit var alertDialog: AlertDialog
+
 
     private val saveVideoLauncher =
         registerForActivityResult(ActivityResultContracts.CreateDocument("video/mp4")) {

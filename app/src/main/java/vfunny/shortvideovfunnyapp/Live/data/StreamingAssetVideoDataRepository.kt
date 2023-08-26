@@ -61,6 +61,9 @@ class StreamingAssetVideoDataRepository() : VideoDataRepository {
                     }
                 }
                 getPostIterationCounter ++
+                for ((lastIndex, language) in userSelectedLanguageList) {
+                    Log.i(TAG, "Final Output emit videoItemList lastIndex $lastIndex : language $language")
+                }
                 Log.i(TAG, "Final Output emit videoItemList size ${videoItemList.size}")
                 Log.i(TAG, "Final Output Post iteration Counter $getPostIterationCounter")
                 emit(videoItemList)
