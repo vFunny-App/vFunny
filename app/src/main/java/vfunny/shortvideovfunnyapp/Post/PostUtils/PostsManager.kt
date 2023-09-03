@@ -40,7 +40,8 @@ class PostsManager {
             val postsList = mutableListOf<List<Post>>()
             val listOfMappedPostsList = mutableListOf<Map<Language, List<Post>>>()
             // Create a deferred task for each language in the languageList
-            val deferredList = videoDataPagedList.map { videoDataPaged -> fetchPosts(videoDataPaged) }
+            val deferredList =
+                videoDataPagedList.map { videoDataPaged -> fetchPosts(videoDataPaged) }
             // Wait for all deferred tasks to complete and add each list of posts to the post list
             deferredList.awaitAll().forEach { mappedPostsList ->
                 listOfMappedPostsList.add(mappedPostsList)
@@ -100,16 +101,24 @@ class PostsManager {
                 val posts = snapshot.children.reversed().mapNotNull { dataSnapshot ->
                     Post.deserialize(dataSnapshot, videoDataPaged.language)
                 }
-                val sublist = posts.subList(videoDataPaged.lastIndex - 1, posts.size - 1)
-                val subListMapped: Map<Language, List<Post>> = mapOf(videoDataPaged.language to sublist)
-                videoDataPaged.lastIndex = posts.size
-                deferred.complete(subListMapped)
+                if (videoDataPaged.lastIndex >= 1 && posts.size >= videoDataPaged.lastIndex) {
+                    val sublist = posts.subList(videoDataPaged.lastIndex - 1, posts.size - 1)
+                    val subListMapped = mapOf(videoDataPaged.language to sublist)
+                    videoDataPaged.lastIndex = posts.size + 1
+                    deferred.complete(subListMapped)
+                } else {
+                    deferred.complete(emptyMap())
+                }
             }
 
             override fun onCancelled(error: DatabaseError) {
                 // If an error occurs, log the error and return an empty list
-                Log.e(TAG, "Error fetching posts for language $videoDataPaged.language", error.toException())
-                deferred.complete(emptyMap<Language, List<Post>>())
+                Log.e(
+                    TAG,
+                    "Error fetching posts for language $videoDataPaged.language",
+                    error.toException()
+                )
+                deferred.complete(emptyMap())
             }
         })
         return@withContext deferred

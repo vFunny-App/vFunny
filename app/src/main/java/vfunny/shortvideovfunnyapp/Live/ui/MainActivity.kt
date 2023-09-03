@@ -9,12 +9,12 @@ import android.view.View
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
+import androidx.core.view.isVisible
 import androidx.fragment.app.commit
 import androidx.fragment.app.replace
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.database.*
-import com.player.models.VideoData
 import vfunny.shortvideovfunnyapp.Live.data.LanguageRepository
 import com.videopager.ui.VideoPagerFragment
 import vfunny.shortvideovfunnyapp.Lang.ui.LangListActivity
@@ -36,7 +36,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
 import vfunny.shortvideovfunnyapp.Live.ui.extensions.events
-import vfunny.shortvideovfunnyapp.Post.model.Language
 import vfunny.shortvideovfunnyapp.models.*
 import vfunny.shortvideovfunnyapp.vm.MainActivityViewModelFactory
 
@@ -61,6 +60,21 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
         // Manual dependency injection
         context = this.applicationContext
         super.onCreate(savedInstanceState)
+        supportFragmentManager
+            .setFragmentResultListener("showFragment", this) { requestKey, bundle ->
+                val result = bundle.getBoolean("show")
+                if (result) {
+                    binding.fragmentContainer.visibility = View.VISIBLE
+                }
+            }
+        supportFragmentManager
+            .setFragmentResultListener("hideLoading", this) { requestKey, bundle ->
+                val result = bundle.getBoolean("hide")
+                if (result) {
+                    binding.animationView.clearAnimation()
+                    binding.loadingLyt.removeAllViewsInLayout()
+                }
+            }
         showLanguage = intent.getBooleanExtra("showLanguage", false)
         binding = MainActivityBinding.inflate(layoutInflater)
         initWelcomeAnimation()
@@ -86,14 +100,22 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
                     languageSelectionDialog.show()
                     languageSelectionDialog.showLanguageDialog(effect.languagesMap)
                 }
+
                 is LanguageViewEffect.ConfirmSelection -> {
                     Log.e(TAG, "LanguageViewEffect.ConfirmSelection: RESTART ACTIVITY INTENT")
                     onLanguageSelected()
                 }
+
                 is TappedLanguageListEffect -> Log.e(TAG, "TappedLanguageListEffect: $effect")
-                is TappedUpdatesNotifyEffect -> Log.e(TAG, "TappedUpdatesNotifyEffect: ${effect.mediaUri}")
+                is TappedUpdatesNotifyEffect -> Log.e(
+                    TAG,
+                    "TappedUpdatesNotifyEffect: ${effect.mediaUri}"
+                )
+
                 is PlayerErrorEffect -> Log.e(TAG, "PlayerErrorEffect: ${effect.throwable}")
-                else -> { Log.e(TAG, "viewModel.effects UNKNOWN EFFECT: $effect")}
+                else -> {
+                    Log.e(TAG, "viewModel.effects UNKNOWN EFFECT: $effect")
+                }
             }
         }
 
@@ -209,8 +231,6 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
                         showConfirmationDialog("Disable Ads?", false)
                     }
                 }
-                // do something with isEnabled
-                // you can use the isEnabled value here in your loop
             }
 
             override fun onCancelled(databaseError: DatabaseError) {
@@ -250,9 +270,6 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
         supportFragmentManager.commit {
             replace<VideoPagerFragment>(binding.fragmentContainer.id)
         }
-        binding.animationView.clearAnimation()
-        binding.fragmentContainer.visibility = View.VISIBLE
-        binding.loadingLyt.removeAllViewsInLayout()
         if (showLanguage) {
             clicks.tryEmit(LanguageViewEvent.SelectLanguage)
             showLanguage = false
@@ -280,7 +297,6 @@ class MainActivity : BaseActivity(), AuthManager.AuthListener {
     override fun onAuthFailed() {
         AuthManager.getInstance().showLogin(this)
     }
-
 
     private fun Lifecycle.viewEvents(): Flow<ViewEvent> {
         return events().filter { event -> event == Lifecycle.Event.ON_START || event == Lifecycle.Event.ON_STOP }

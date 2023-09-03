@@ -10,7 +10,9 @@ import android.view.View
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.setFragmentResult
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
@@ -45,7 +47,6 @@ class VideoPagerFragment(
     private var input_video_uri: File? = null
     private lateinit var progressBar: ProgressBar
     private lateinit var alertDialog: AlertDialog
-
 
     private val saveVideoLauncher =
         registerForActivityResult(ActivityResultContracts.CreateDocument("video/mp4")) {
@@ -100,6 +101,9 @@ class VideoPagerFragment(
         val states = viewModel.states.onEach { state ->
             // Await the list submission so that the adapter list is in sync with state.videoData
             adapter.awaitList(state.videoData)
+            if(state.videoData?.isNotEmpty() == true) {
+                this@VideoPagerFragment.setFragmentResult("showFragment", bundleOf("show" to true))
+            }
             // Attach the player to the View whenever it's ready. Note that attachPlayer can
             // be false while appPlayer is non-null during configuration changes and, conversely,
             // attachPlayer can be true while appPlayer is null when the appPlayer hasn't been
@@ -136,23 +140,20 @@ class VideoPagerFragment(
                 // Set the player view on the active page. Note that ExoPlayer won't render
                 // any frames until the output view (here, appPlayerView) is on-screen
                 adapter.attachPlayerView(appPlayerView, state.page)
-
                 // If the player media is rendering frames, then show the player
                 if (state.showPlayer) {
                     adapter.showPlayerFor(state.page)
+                    this@VideoPagerFragment.setFragmentResult("hideLoading", bundleOf("hide" to true))
                 }
             }
         }
 
         val effects = viewModel.effects.onEach { effect ->
             when (effect) {
-                is PageEffect -> adapter.renderEffect(binding.viewPager.currentItem, effect)
-                is PlayerErrorEffect -> Snackbar.make(
-                    binding.root,
-                    "Image/${effect.throwable.message}",
-                    Snackbar.LENGTH_LONG
-                ).show()
-
+                is PageEffect -> {
+                    adapter.renderEffect(binding.viewPager.currentItem, effect)
+                }
+                is PlayerErrorEffect -> Log.e("PlayerErrorEffect", "Image/${effect.throwable.message}" )
                 is ShareWhatsappEffect -> shareToWhatsapp(effect.mediaUri)
                 is SaveVideoDataEffect -> {
                     Log.e(DownloadWatermarkManager.TAG, "cancel: Cancelled 2")
